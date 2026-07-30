@@ -91,25 +91,27 @@ async function verifySelected() {
 async function delSelected() {
   const ids = [...mbSelected];
   if (!ids.length) return;
-  if (!confirm('确定删除所选 ' + ids.length + ' 个邮箱?')) return;
+  if (!confirm('Delete selected ' + ids.length + ' mailboxes?')) return;
   for (const id of ids) {
     await api('/api/mailboxes/' + id, { method: 'DELETE' });
     mbSelected.delete(id);
   }
-  toast('已删除 ' + ids.length + ' 个');
+  toast((window.t ? window.t('common.success', '已删除') : 'Deleted ') + ids.length);
   loadMailboxes();
 }
 
 /* ===== 批量导入 ===== */
 function openImportModal() {
   document.getElementById('import-text').value = '';
-  document.getElementById('import-count').textContent = '已识别 0 个邮箱';
+  const countTpl = window.t ? window.t('mb.import_count', '已识别 0 个邮箱') : 'Identified 0 mailboxes';
+  document.getElementById('import-count').textContent = countTpl.replace('{n}', 0);
   document.getElementById('import-modal').style.display = 'flex';
 }
 
 function updateImportCount() {
   const n = parseImportLines(document.getElementById('import-text').value).length;
-  document.getElementById('import-count').textContent = '已识别 ' + n + ' 个邮箱';
+  const countTpl = window.t ? window.t('mb.import_count', `已识别 ${n} 个邮箱`) : `Identified ${n} mailboxes`;
+  document.getElementById('import-count').textContent = countTpl.replace('{n}', n);
 }
 
 (function () {
@@ -149,27 +151,26 @@ function parseImportLines(text) {
 async function doImport() {
   const text = document.getElementById('import-text').value;
   const items = parseImportLines(text);
-  if (!items.length) return toast('没有可导入的有效行', true);
+  if (!items.length) return toast('No valid lines to import', true);
   const r = await api('/api/mailboxes/import', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ items }),
   });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) return toast('导入失败: ' + (d.error || r.status), true);
+  if (!r.ok) return toast('Import failed: ' + (d.error || r.status), true);
   closeModal('import-modal');
-  toast(`识别 ${items.length} 个：新增 ${d.added}，跳过 ${d.skipped}`);
+  toast(`Identified ${items.length}: Added ${d.added}, Skipped ${d.skipped}`);
   mbPage = 1;
   loadMailboxes();
-  if (d.added > 0) verifyAll(); // 导入后自动验证
+  if (d.added > 0) verifyAll();
 }
 
-/* ===== 批量验证：10 并发，10 个一批 ===== */
+/* ===== 批量验证 ===== */
 let verifying = false;
 
 async function verifyAll() {
   if (verifying) return;
-  // 拉取所有待验证 / 验证失败的邮箱 id
   const ids = [];
   let page = 1;
   for (;;) {
@@ -182,11 +183,10 @@ async function verifyAll() {
     if (page * 100 >= (d.total || 0) || !list.length) break;
     page++;
   }
-  if (!ids.length) return toast('没有需要验证的邮箱');
+  if (!ids.length) return toast('No mailboxes need verification');
   await runVerify(ids);
 }
 
-// 10 并发验证给定的邮箱 id 列表
 async function runVerify(ids) {
   if (verifying || !ids.length) return;
   verifying = true;
@@ -213,12 +213,13 @@ async function runVerify(ids) {
   await Promise.all(workers);
 
   verifying = false;
-  toast(`验证完成：成功 ${ok}，失败 ${fail}`);
+  toast(`Verification complete: Success ${ok}, Failed ${fail}`);
   loadMailboxes();
 }
 
 function openMailboxModal(data) {
-  document.getElementById('mb-modal-title').textContent = data ? '编辑邮箱 #' + data.id : '新增邮箱';
+  const title = data ? ((window.t ? window.t('mb.modal_edit_title', '编辑邮箱') : 'Edit Mailbox') + ' #' + data.id) : (window.t ? window.t('mb.modal_add_title', '新增邮箱') : 'Add Mailbox');
+  document.getElementById('mb-modal-title').textContent = title;
   document.getElementById('mb-id').value = data ? data.id : '';
   document.getElementById('mb-email').value = data ? data.email : '';
   document.getElementById('mb-password').value = data ? data.password : '';
@@ -246,7 +247,7 @@ async function saveMailbox() {
     status: document.getElementById('mb-status').value,
     note: document.getElementById('mb-note').value,
   };
-  if (!body.email) return toast('email 必填', true);
+  if (!body.email) return toast('Email is required', true);
   const r = await api('/api/mailboxes' + (id ? '/' + id : ''), {
     method: id ? 'PUT' : 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -254,28 +255,27 @@ async function saveMailbox() {
   });
   if (!r.ok) {
     const e = await r.json().catch(() => ({}));
-    return toast('保存失败: ' + (e.error || r.status), true);
+    return toast('Save failed: ' + (e.error || r.status), true);
   }
   closeModal('mb-modal');
-  toast(id ? '已更新' : '已新增');
+  toast(window.t ? window.t('common.success', 'Saved') : (id ? 'Updated' : 'Added'));
   loadMailboxes();
 }
 
 async function delMailbox(id) {
-  if (!confirm('确定删除邮箱 #' + id + ' ?')) return;
+  if (!confirm('Delete mailbox #' + id + ' ?')) return;
   const r = await api('/api/mailboxes/' + id, { method: 'DELETE' });
-  if (!r.ok) return toast('删除失败', true);
-  toast('已删除');
+  if (!r.ok) return toast('Delete failed', true);
+  toast(window.t ? window.t('common.success', '已删除') : 'Deleted');
   loadMailboxes();
 }
 
-/* ===== 取件弹窗：打开开始轮询（3 秒），关闭立即停止 ===== */
-let mailTimer = null;      // 轮询定时器
-let mailMailboxId = null;  // 当前取件的邮箱 id
-let mailMsgs = [];         // 最新一次拉到的邮件
-let mailSelected = 0;      // 当前选中邮件下标
-let mailFetching = false;  // 避免请求重叠
-let mailListSig = '';      // 列表渲染签名，用于跳过无变化的重绘
+let mailTimer = null;
+let mailMailboxId = null;
+let mailMsgs = [];
+let mailSelected = 0;
+let mailFetching = false;
+let mailListSig = '';
 
 function openMailModal(id) {
   const mb = mbCache[id];
@@ -284,9 +284,10 @@ function openMailModal(id) {
   mailMsgs = [];
   mailSelected = 0;
   mailListSig = '';
+  const loadingTxt = window.t ? window.t('mb.loading', '加载中...') : 'Loading...';
   document.getElementById('mail-title').textContent = mb.email;
-  document.getElementById('mail-sub').textContent = '收件箱 · 3 秒自动刷新';
-  document.getElementById('mail-list').innerHTML = '<div class="mail-empty">加载中...</div>';
+  document.getElementById('mail-sub').textContent = 'Inbox · Auto refresh 3s';
+  document.getElementById('mail-list').innerHTML = `<div class="mail-empty">${loadingTxt}</div>`;
   document.getElementById('mail-meta').innerHTML = '';
   document.getElementById('mail-frame').srcdoc = '';
   document.getElementById('mail-modal').style.display = 'flex';
@@ -309,15 +310,13 @@ async function fetchMail() {
   const id = mailMailboxId;
   try {
     const r = await api('/api/mailboxes/' + id + '/messages');
-    if (id !== mailMailboxId) return; // 请求返回时弹窗已关/已切换
+    if (id !== mailMailboxId) return;
     const d = await r.json().catch(() => ({}));
     if (!r.ok) {
       document.getElementById('mail-list').innerHTML =
-        `<div class="mail-empty err">${esc(d.error || '取件失败')}</div>`;
+        `<div class="mail-empty err">${esc(d.error || 'Fetch failed')}</div>`;
       return;
     }
-    // 合并而非整体替换：新邮件插到最前，已有邮件保留。
-    // 这样即使某次轮询返回不全（临时少几封），列表也不会先塌陷再跳回，避免闪烁。
     const prevId = msgKey(mailMsgs[mailSelected]);
     mailMsgs = mergeMsgs(mailMsgs, d.items || []);
     const i = prevId ? mailMsgs.findIndex(m => msgKey(m) === prevId) : -1;
@@ -329,13 +328,11 @@ async function fetchMail() {
   }
 }
 
-// 邮件唯一键：优先用消息 id，退回 主题+时间。
 function msgKey(m) {
   if (!m) return '';
   return m.id || (m.subject + '|' + m.received_at);
 }
 
-// 合并已有与新拉取的邮件：按 key 去重，新邮件覆盖旧记录，按接收时间倒序（最新在前）。
 function mergeMsgs(existing, incoming) {
   const map = new Map();
   (existing || []).forEach(m => map.set(msgKey(m), m));
@@ -348,7 +345,7 @@ function renderMailList() {
   const list = document.getElementById('mail-list');
   if (!mailMsgs.length) {
     mailListSig = '';
-    list.innerHTML = '<div class="mail-empty">暂无邮件，等待新邮件...</div>';
+    list.innerHTML = '<div class="mail-empty">No emails yet...</div>';
     return;
   }
   // 列表内容与选中项都没变时不重绘，避免每 3 秒轮询造成闪烁。

@@ -40,14 +40,14 @@ if (getToken()) location.href = '/dashboard';
 
 async function doLogin() {
   const password = document.getElementById('lg-pass').value;
-  if (!password) return toast('请输入密码', true);
+  if (!password) return toast(window.t ? window.t('login.empty_pass', '请输入密码') : 'Please enter password', true);
   const r = await fetch('/api/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),
   });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) return toast(d.error || '登录失败', true);
+  if (!r.ok) return toast(d.error || (window.t ? window.t('login.failed', '登录失败') : 'Login failed'), true);
   setToken(d.token);
   location.href = '/dashboard';
 }

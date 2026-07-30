@@ -27,7 +27,7 @@
           <label data-i18n="sett.max_concurrency">最大并发数</label>
           <span class="field-hint" data-i18n="sett.max_concurrency_hint">注册时同时执行的任务数上限</span>
           <div class="input-suffix">
-            <input id="set-max-concurrency" class="px-input" type="number" min="1" max="100" placeholder="默认 10">
+            <input id="set-max-concurrency" class="px-input" type="number" min="1" max="100" placeholder="Default 10">
             <span class="suffix" data-i18n="sett.unit_items">个</span>
           </div>
         </div>
@@ -35,7 +35,7 @@
           <label data-i18n="sett.fission_count">裂变数量</label>
           <span class="field-hint" data-i18n="sett.fission_count_hint">每个账号最多可继续裂变的次数</span>
           <div class="input-suffix">
-            <input id="set-fission-count" class="px-input" type="number" min="1" max="100" placeholder="默认 5">
+            <input id="set-fission-count" class="px-input" type="number" min="1" max="100" placeholder="Default 5">
             <span class="suffix" data-i18n="sett.unit_times">次</span>
           </div>
         </div>
@@ -104,7 +104,7 @@
           <label data-i18n="sett.replenish_threshold">存活少于多少补</label>
           <span class="field-hint" data-i18n="sett.replenish_threshold_hint">每 30 秒检查一次目标站 openai 存活号数，低于该值就用未出库的已注册账号补足</span>
           <div class="input-suffix">
-            <input id="set-replenish-threshold" class="px-input" type="number" min="1" max="10000" placeholder="如 20">
+            <input id="set-replenish-threshold" class="px-input" type="number" min="1" max="10000" placeholder="e.g. 20">
             <span class="suffix" data-i18n="sett.unit_items">个</span>
           </div>
         </div>
@@ -120,7 +120,7 @@
         </div>
         <div class="field">
           <label data-i18n="sett.password">密码</label>
-          <input id="set-replenish-pass" class="px-input" type="password" autocomplete="new-password" placeholder="登录密码">
+          <input id="set-replenish-pass" class="px-input" type="password" autocomplete="new-password" placeholder="Password">
         </div>
         <label class="switch-row">
           <input id="set-replenish-autoproduce" type="checkbox">
@@ -150,7 +150,7 @@
         <div class="field">
           <div class="field-label-row">
             <label data-i18n="sett.proxy_list">代理列表</label>
-            <span id="proxy-count" class="count-badge">识别到 0 个代理</span>
+            <span id="proxy-count" class="count-badge">0 proxies</span>
           </div>
           <span class="field-hint" data-i18n="sett.proxy_hint">每行一个，支持 http(s)://user:pass@host:port、socks5://host:port、host:port:user:pass</span>
           <textarea id="set-proxy-list" class="px-input proxy-textarea" rows="5" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" oninput="updateProxyCount()" placeholder="http://user:pass@1.2.3.4:8080&#10;socks5://1.2.3.4:1080&#10;1.2.3.4:8080:user:pass"></textarea>
@@ -178,7 +178,7 @@
         </div>
         <div class="field">
           <label data-i18n="sett.new_pass">新密码</label>
-          <span class="field-hint">长度需大于 6 位</span>
+          <span class="field-hint">Length > 6</span>
           <input id="pw-new" class="px-input" type="password" autocomplete="new-password">
         </div>
         <div class="field">
@@ -211,7 +211,6 @@ async function loadSettings() {
   document.getElementById('set-email-source').value = d.email_source === 'varymail' ? 'varymail' : 'outlook';
   document.getElementById('set-varymail-key').value = d.varymail_api_key || '';
   onSourceChange();
-  // 已配置 Key 则自动查一次 chatgpt 库存
   if (d.varymail_api_key) checkVarymail(true);
 
   document.getElementById('set-replenish-enabled').checked = d.replenish_enabled === '1';
@@ -229,7 +228,7 @@ async function saveReplenish() {
   const user = document.getElementById('set-replenish-user').value.trim();
   const pass = document.getElementById('set-replenish-pass').value;
   if (enabled && (!threshold || !url || !user || !pass)) {
-    return toast('开启补号需填写阈值、目标网站、账号和密码', true);
+    return toast(window.t ? window.t('common.error', '操作失败') : 'Fill in required fields', true);
   }
   const body = {
     replenish_enabled: enabled ? '1' : '0',
@@ -244,8 +243,8 @@ async function saveReplenish() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!r.ok) return toast('保存失败', true);
-  toast('补号配置已保存');
+  if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
+  toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
 }
 
 function onSourceChange() {
@@ -257,10 +256,10 @@ async function checkVarymail(silent) {
   const key = document.getElementById('set-varymail-key').value.trim();
   const box = document.getElementById('varymail-result');
   const btn = document.getElementById('varymail-check-btn');
-  if (!key) { if (!silent) toast('请先填写 API Key', true); return; }
+  if (!key) { if (!silent) toast('Please fill API Key', true); return; }
   btn.disabled = true;
   const old = btn.textContent;
-  btn.textContent = '查询中…';
+  btn.textContent = 'Checking...';
   try {
     const qs = new URLSearchParams({ key });
     const r = await api('/api/varymail/services?' + qs.toString());
@@ -268,20 +267,20 @@ async function checkVarymail(silent) {
     if (!r.ok) {
       box.style.display = 'flex';
       box.className = 'proxy-result fail';
-      box.textContent = '✗ ' + (d.error || '查询失败');
+      box.textContent = '✗ ' + (d.error || 'Failed');
       return;
     }
     const svc = d.service || {};
     const usable = svc.stock !== 'out' && (svc.available || 0) > 0;
-    const stockTxt = svc.stock === 'out' ? '无库存' : (svc.stock || '');
-    document.getElementById('varymail-price').textContent = '单价 ' + (d.price != null ? d.price : '?');
+    const stockTxt = svc.stock === 'out' ? 'No stock' : (svc.stock || '');
+    document.getElementById('varymail-price').textContent = 'Price: ' + (d.price != null ? d.price : '?');
     box.style.display = 'flex';
     box.className = 'proxy-result ' + (usable ? 'ok' : 'fail');
-    box.textContent = (usable ? '✓ ' : '✗ ') + `${svc.name || 'chatgpt'} · 可用 ${svc.available || 0} · ${stockTxt}` + (usable ? '' : '（暂不可用）');
+    box.textContent = (usable ? '✓ ' : '✗ ') + `${svc.name || 'chatgpt'} · Avail: ${svc.available || 0} · ${stockTxt}`;
   } catch (e) {
     box.style.display = 'flex';
     box.className = 'proxy-result fail';
-    box.textContent = '✗ 查询失败：' + e;
+    box.textContent = '✗ Failed: ' + e;
   } finally {
     btn.disabled = false;
     btn.textContent = old;
@@ -291,7 +290,7 @@ async function checkVarymail(silent) {
 async function saveVarymail() {
   const source = document.getElementById('set-email-source').value;
   if (source === 'varymail') {
-    if (!document.getElementById('set-varymail-key').value.trim()) return toast('请填写 varymail API Key', true);
+    if (!document.getElementById('set-varymail-key').value.trim()) return toast('Please fill varymail API Key', true);
   }
   const body = {
     email_source: source,
@@ -302,8 +301,8 @@ async function saveVarymail() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!r.ok) return toast('保存失败', true);
-  toast('来源设置已保存');
+  if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
+  toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
 }
 
 function proxyLines() {
@@ -316,20 +315,22 @@ function firstProxy() {
 }
 
 function updateProxyCount() {
-  document.getElementById('proxy-count').textContent = '识别到 ' + proxyLines().length + ' 个代理';
+  const count = proxyLines().length;
+  const tpl = window.t ? window.t('sett.proxy_count', `Detected ${count} proxies`) : `Detected ${count} proxies`;
+  document.getElementById('proxy-count').textContent = tpl.replace('{n}', count);
 }
 
 async function testProxy() {
   const proxy = firstProxy();
   const box = document.getElementById('proxy-test-result');
   const btn = document.getElementById('proxy-test-btn');
-  if (!proxy) { box.style.display = 'none'; return toast('请先填写代理', true); }
+  if (!proxy) { box.style.display = 'none'; return toast('Please fill proxies first', true); }
   btn.disabled = true;
   const old = btn.textContent;
-  btn.textContent = '测试中…';
+  btn.textContent = 'Testing...';
   box.style.display = 'flex';
   box.className = 'proxy-result testing';
-  box.innerHTML = '<span class="spinner"></span> 正在测试第一个代理…';
+  box.innerHTML = '<span class="spinner"></span> Testing proxy...';
   try {
     const r = await api('/api/proxy/test', {
       method: 'POST',
@@ -339,14 +340,14 @@ async function testProxy() {
     const d = await r.json().catch(() => ({}));
     if (r.ok && d.ok) {
       box.className = 'proxy-result ok';
-      box.innerHTML = '✓ 代理可用 · 出口 IP <b>' + (d.ip || '未知') + '</b> · ' + (d.ms || 0) + ' ms';
+      box.innerHTML = '✓ Proxy works · IP <b>' + (d.ip || 'Unknown') + '</b> · ' + (d.ms || 0) + ' ms';
     } else {
       box.className = 'proxy-result fail';
-      box.textContent = '✗ 代理不可用：' + (d.error || '连接失败');
+      box.textContent = '✗ Proxy failed: ' + (d.error || 'Connection failed');
     }
   } catch (e) {
     box.className = 'proxy-result fail';
-    box.textContent = '✗ 测试失败：' + e;
+    box.textContent = '✗ Test failed: ' + e;
   } finally {
     btn.disabled = false;
     btn.textContent = old;
@@ -363,8 +364,8 @@ async function saveProxy() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!r.ok) return toast('保存失败', true);
-  toast('代理配置已保存');
+  if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
+  toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
 }
 
 async function saveSettings() {
@@ -377,30 +378,34 @@ async function saveSettings() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!r.ok) return toast('保存失败', true);
-  toast('设置已保存');
+  if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
+  toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
 }
 
 async function changePassword() {
   const oldPass = document.getElementById('pw-old').value;
   const newPass = document.getElementById('pw-new').value;
   const newPass2 = document.getElementById('pw-new2').value;
-  if (!oldPass) return toast('请输入原密码', true);
-  if (newPass.length <= 6) return toast('新密码长度必须大于 6 位', true);
-  if (newPass !== newPass2) return toast('两次输入的新密码不一致', true);
+  if (!oldPass) return toast('Please enter current password', true);
+  if (newPass.length <= 6) return toast('New password length must be > 6', true);
+  if (newPass !== newPass2) return toast('Passwords do not match', true);
   const r = await api('/api/change-password', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ old_password: oldPass, new_password: newPass }),
   });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) return toast(d.error || '修改失败', true);
-  if (d.token) setToken(d.token); // 改密后旧 token 作废，换上新 token
+  if (!r.ok) return toast(d.error || 'Failed to change password', true);
+  if (d.token) setToken(d.token);
   document.getElementById('pw-old').value = '';
   document.getElementById('pw-new').value = '';
   document.getElementById('pw-new2').value = '';
-  toast('密码已修改');
+  toast(window.t ? window.t('common.success', '密码已修改') : 'Password changed');
 }
+
+window.addEventListener('langchanged', () => {
+  updateProxyCount();
+});
 
 loadSettings();
 </script>
