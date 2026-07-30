@@ -10,7 +10,7 @@
 🛒 **Cửa hàng** [pay.ldxp.cn/shop/chiyi](https://pay.ldxp.cn/shop/chiyi) &nbsp;|&nbsp;
 ✉️ **Email** [vividairun@gmail.com](mailto:vividairun@gmail.com)
 
-Ngôn ngữ: [中文](README.md) | [English](README_EN.md) | [Tiếng Việt](README_VI.md)
+Ngôn ngữ: [English](README.md) | [Tiếng Việt](README_VI.md) | [中文](README_ZH.md)
 
 ---
 
