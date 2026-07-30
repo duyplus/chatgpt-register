@@ -10,6 +10,8 @@
 🛒 **小店** [pay.ldxp.cn/shop/chiyi](https://pay.ldxp.cn/shop/chiyi) &nbsp;|&nbsp;
 ✉️ **邮箱** [vividairun@gmail.com](mailto:vividairun@gmail.com)
 
+Languages: [中文](README.md) | [English](README_EN.md) | [Tiếng Việt](README_VI.md)
+
 ---
 
 ## ✨ 核心优势
