@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>系统设置 · ChatGPT 注册管理</title>
+<title data-i18n="sett.title">系统设置 · ChatGPT 注册管理</title>
 <link rel="stylesheet" href="/static/style.css?v=8">
 </head>
 <body data-page="settings">
 <div class="layout">
   <main class="main">
-    <h1 class="page-title">系统设置</h1>
-    <p class="page-sub">配置注册规则、代理与账户安全</p>
+    <h1 class="page-title" data-i18n="sett.title">系统设置</h1>
+    <p class="page-sub" data-i18n="sett.sub">配置注册规则、代理与账户安全</p>
 
     <div class="settings-grid">
       <div class="px-panel settings-card">
@@ -19,28 +19,28 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg>
           </span>
           <div>
-            <h2>基本设置</h2>
-            <p>注册并发控制</p>
+            <h2 data-i18n="sett.basic">基本设置</h2>
+            <p data-i18n="sett.basic_sub">注册并发控制</p>
           </div>
         </div>
         <div class="field">
-          <label>最大并发数</label>
-          <span class="field-hint">注册时同时执行的任务数上限</span>
+          <label data-i18n="sett.max_concurrency">最大并发数</label>
+          <span class="field-hint" data-i18n="sett.max_concurrency_hint">注册时同时执行的任务数上限</span>
           <div class="input-suffix">
             <input id="set-max-concurrency" class="px-input" type="number" min="1" max="100" placeholder="默认 10">
-            <span class="suffix">个</span>
+            <span class="suffix" data-i18n="sett.unit_items">个</span>
           </div>
         </div>
         <div class="field">
-          <label>裂变数量</label>
-          <span class="field-hint">每个账号最多可继续裂变的次数</span>
+          <label data-i18n="sett.fission_count">裂变数量</label>
+          <span class="field-hint" data-i18n="sett.fission_count_hint">每个账号最多可继续裂变的次数</span>
           <div class="input-suffix">
             <input id="set-fission-count" class="px-input" type="number" min="1" max="100" placeholder="默认 5">
-            <span class="suffix">次</span>
+            <span class="suffix" data-i18n="sett.unit_times">次</span>
           </div>
         </div>
         <div class="settings-foot">
-          <button class="px-btn primary" onclick="saveSettings()">保存设置</button>
+          <button class="px-btn primary" onclick="saveSettings()" data-i18n="sett.save_settings">保存设置</button>
         </div>
       </div>
 
@@ -50,38 +50,38 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
           </span>
           <div>
-            <h2>邮箱来源</h2>
-            <p>选择注册用邮箱：本地 Outlook 或 varymail 取件</p>
+            <h2 data-i18n="sett.email_source">邮箱来源</h2>
+            <p data-i18n="sett.email_source_sub">选择注册用邮箱：本地 Outlook 或 varymail 取件</p>
           </div>
         </div>
         <div class="field">
-          <label>来源</label>
-          <span class="field-hint">Outlook = 本地已验证邮箱 + 别名裂变；varymail = 按次购买取件（无裂变）</span>
+          <label data-i18n="sett.source">来源</label>
+          <span class="field-hint" data-i18n="sett.source_hint">Outlook = 本地已验证邮箱 + 别名裂变；varymail = 按次购买取件（无裂变）</span>
           <select id="set-email-source" class="px-input" onchange="onSourceChange()">
-            <option value="outlook">本地 Outlook 邮箱</option>
-            <option value="varymail">varymail 取件</option>
+            <option value="outlook" data-i18n="sett.outlook_opt">本地 Outlook 邮箱</option>
+            <option value="varymail" data-i18n="sett.varymail_opt">varymail 取件</option>
           </select>
         </div>
         <div id="varymail-fields">
           <div class="field">
             <label>varymail API Key</label>
-            <span class="field-hint">在 vary.email 后台获取，仅保存在本系统。服务固定用 chatgpt，API 地址固定 https://vary.email</span>
+            <span class="field-hint" data-i18n="sett.varymail_hint">在 vary.email 后台获取，仅保存在本系统。服务固定用 chatgpt，API 地址固定 https://vary.email</span>
             <input id="set-varymail-key" class="px-input" type="text" autocomplete="off" spellcheck="false" placeholder="API Key">
           </div>
           <div class="field">
             <div class="field-label-row">
-              <label>chatgpt 服务库存</label>
+              <label data-i18n="sett.varymail_stock">chatgpt 服务库存</label>
               <span id="varymail-price" class="count-badge"></span>
             </div>
-            <span class="field-hint">生产前会自动判断库存；点下面按钮验证 Key 并查看当前可用数</span>
+            <span class="field-hint" data-i18n="sett.varymail_stock_hint">生产前会自动判断库存；点下面按钮验证 Key 并查看当前可用数</span>
           </div>
           <div id="varymail-result" class="proxy-result" style="display:none"></div>
           <div class="settings-foot">
-            <button id="varymail-check-btn" class="px-btn ghost" onclick="checkVarymail()">查询 chatgpt 库存</button>
+            <button id="varymail-check-btn" class="px-btn ghost" onclick="checkVarymail()" data-i18n="sett.check_stock">查询 chatgpt 库存</button>
           </div>
         </div>
         <div class="settings-foot">
-          <button class="px-btn primary" onclick="saveVarymail()">保存来源设置</button>
+          <button class="px-btn primary" onclick="saveVarymail()" data-i18n="sett.save_source">保存来源设置</button>
         </div>
       </div>
 
@@ -91,44 +91,44 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
           </span>
           <div>
-            <h2>自动补号</h2>
-            <p>定时把已注册账号推送到 image2api 账号池</p>
+            <h2 data-i18n="sett.auto_replenish">自动补号</h2>
+            <p data-i18n="sett.auto_replenish_sub">定时把已注册账号推送到 image2api 账号池</p>
           </div>
         </div>
         <label class="switch-row">
           <input id="set-replenish-enabled" type="checkbox">
           <span class="switch-ui"></span>
-          <span class="switch-label">开启自动补号</span>
+          <span class="switch-label" data-i18n="sett.enable_replenish">开启自动补号</span>
         </label>
         <div class="field">
-          <label>存活少于多少补</label>
-          <span class="field-hint">每 30 秒检查一次目标站 openai 存活号数，低于该值就用未出库的已注册账号补足</span>
+          <label data-i18n="sett.replenish_threshold">存活少于多少补</label>
+          <span class="field-hint" data-i18n="sett.replenish_threshold_hint">每 30 秒检查一次目标站 openai 存活号数，低于该值就用未出库的已注册账号补足</span>
           <div class="input-suffix">
             <input id="set-replenish-threshold" class="px-input" type="number" min="1" max="10000" placeholder="如 20">
-            <span class="suffix">个</span>
+            <span class="suffix" data-i18n="sett.unit_items">个</span>
           </div>
         </div>
         <div class="field">
-          <label>目标补号网站</label>
-          <span class="field-hint">image2api 地址，如 https://your.domain 或 http://1.2.3.4:2000</span>
+          <label data-i18n="sett.target_site">目标补号网站</label>
+          <span class="field-hint" data-i18n="sett.target_site_hint">image2api 地址，如 https://your.domain 或 http://1.2.3.4:2000</span>
           <input id="set-replenish-url" class="px-input" type="text" autocomplete="off" spellcheck="false" placeholder="https://your.domain">
         </div>
         <div class="field">
-          <label>账号</label>
-          <span class="field-hint">image2api 后台管理员账号（邮箱或用户名）</span>
+          <label data-i18n="sett.account">账号</label>
+          <span class="field-hint" data-i18n="sett.account_hint">image2api 后台管理员账号（邮箱或用户名）</span>
           <input id="set-replenish-user" class="px-input" type="text" autocomplete="off" spellcheck="false" placeholder="admin@example.com">
         </div>
         <div class="field">
-          <label>密码</label>
+          <label data-i18n="sett.password">密码</label>
           <input id="set-replenish-pass" class="px-input" type="password" autocomplete="new-password" placeholder="登录密码">
         </div>
         <label class="switch-row">
           <input id="set-replenish-autoproduce" type="checkbox">
           <span class="switch-ui"></span>
-          <span class="switch-label">没现成号时自动生产（并发用上面「最大并发数」，滚动生产、满 5 个推一次）</span>
+          <span class="switch-label" data-i18n="sett.auto_produce">没现成号时自动生产（并发用上面「最大并发数」，滚动生产、满 5 个推一次）</span>
         </label>
         <div class="settings-foot">
-          <button class="px-btn primary" onclick="saveReplenish()">保存补号配置</button>
+          <button class="px-btn primary" onclick="saveReplenish()" data-i18n="sett.save_replenish">保存补号配置</button>
         </div>
       </div>
 
@@ -138,27 +138,27 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="2"/><path d="M6 12h.01M10 12h.01M14 12h4"/></svg>
           </span>
           <div>
-            <h2>代理配置</h2>
-            <p>注册时通过代理访问，降低风控</p>
+            <h2 data-i18n="sett.proxy_config">代理配置</h2>
+            <p data-i18n="sett.proxy_sub">注册时通过代理访问，降低风控</p>
           </div>
         </div>
         <label class="switch-row">
           <input id="set-proxy-enabled" type="checkbox">
           <span class="switch-ui"></span>
-          <span class="switch-label">启用代理</span>
+          <span class="switch-label" data-i18n="sett.enable_proxy">启用代理</span>
         </label>
         <div class="field">
           <div class="field-label-row">
-            <label>代理列表</label>
+            <label data-i18n="sett.proxy_list">代理列表</label>
             <span id="proxy-count" class="count-badge">识别到 0 个代理</span>
           </div>
-          <span class="field-hint">每行一个，支持 http(s)://user:pass@host:port、socks5://host:port、host:port:user:pass</span>
+          <span class="field-hint" data-i18n="sett.proxy_hint">每行一个，支持 http(s)://user:pass@host:port、socks5://host:port、host:port:user:pass</span>
           <textarea id="set-proxy-list" class="px-input proxy-textarea" rows="5" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" oninput="updateProxyCount()" placeholder="http://user:pass@1.2.3.4:8080&#10;socks5://1.2.3.4:1080&#10;1.2.3.4:8080:user:pass"></textarea>
         </div>
         <div id="proxy-test-result" class="proxy-result" style="display:none"></div>
         <div class="settings-foot">
-          <button id="proxy-test-btn" class="px-btn ghost" onclick="testProxy()">测试代理</button>
-          <button class="px-btn primary" onclick="saveProxy()">保存代理</button>
+          <button id="proxy-test-btn" class="px-btn ghost" onclick="testProxy()" data-i18n="sett.test_proxy">测试代理</button>
+          <button class="px-btn primary" onclick="saveProxy()" data-i18n="sett.save_proxy">保存代理</button>
         </div>
       </div>
 
@@ -168,25 +168,25 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           </span>
           <div>
-            <h2>修改密码</h2>
-            <p>修改后旧登录会立即失效</p>
+            <h2 data-i18n="sett.change_pass">修改密码</h2>
+            <p data-i18n="sett.change_pass_sub">修改后旧登录会立即失效</p>
           </div>
         </div>
         <div class="field">
-          <label>原密码</label>
+          <label data-i18n="sett.old_pass">原密码</label>
           <input id="pw-old" class="px-input" type="password" autocomplete="current-password">
         </div>
         <div class="field">
-          <label>新密码</label>
+          <label data-i18n="sett.new_pass">新密码</label>
           <span class="field-hint">长度需大于 6 位</span>
           <input id="pw-new" class="px-input" type="password" autocomplete="new-password">
         </div>
         <div class="field">
-          <label>确认新密码</label>
+          <label data-i18n="sett.new_pass_confirm">确认新密码</label>
           <input id="pw-new2" class="px-input" type="password" autocomplete="new-password">
         </div>
         <div class="settings-foot">
-          <button class="px-btn primary" onclick="changePassword()">修改密码</button>
+          <button class="px-btn primary" onclick="changePassword()" data-i18n="sett.submit_change_pass">修改密码</button>
         </div>
       </div>
     </div>

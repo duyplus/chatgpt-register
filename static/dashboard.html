@@ -100,7 +100,15 @@
 <script src="/static/i18n/i18n.js"></script>
 <script src="/static/layout.js"></script>
 <script>
-const DASH_STATUS = { pending: '待生产', registering: '注册中', registered: '已注册', register_failed: '注册失败' };
+function getDashStatusText(status) {
+  const keys = {
+    pending: 'dash.pending',
+    registering: 'dash.st_registering',
+    registered: 'dash.st_registered',
+    register_failed: 'dash.st_failed',
+  };
+  return window.t ? window.t(keys[status] || status, status) : (status || '');
+}
 const STATUS_COLOR = { registered: '#16a34a', registering: '#0891b2', register_failed: '#e11d48', pending: '#d97706' };
 
 function set(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
@@ -116,9 +124,10 @@ function renderDonut(d) {
   const donut = document.getElementById('donut');
   const legend = document.getElementById('donut-legend');
   set('donut-total', sum);
+  const noDataText = window.t ? window.t('dash.no_data', '暂无数据') : '暂无数据';
   if (!sum) {
     donut.style.background = 'conic-gradient(#eef0f5 0 100%)';
-    legend.innerHTML = '<div class="mini-empty">暂无数据</div>';
+    legend.innerHTML = `<div class="mini-empty">${noDataText}</div>`;
     return;
   }
   let acc = 0, seg = [];
@@ -129,13 +138,14 @@ function renderDonut(d) {
   });
   donut.style.background = 'conic-gradient(' + seg.join(',') + ')';
   legend.innerHTML = parts.map(([k, v]) =>
-    `<div class="lg-item"><span class="lg-dot" style="background:${STATUS_COLOR[k]}"></span>${DASH_STATUS[k]}<b>${v}</b><span class="lg-pct">${(v / sum * 100).toFixed(0)}%</span></div>`
+    `<div class="lg-item"><span class="lg-dot" style="background:${STATUS_COLOR[k]}"></span>${getDashStatusText(k)}<b>${v}</b><span class="lg-pct">${(v / sum * 100).toFixed(0)}%</span></div>`
   ).join('');
 }
 
 function renderTrend(trend) {
   const box = document.getElementById('trend-bars');
-  if (!trend || !trend.length) { box.innerHTML = '<div class="mini-empty">暂无产量记录</div>'; return; }
+  const noRecordsText = window.t ? window.t('dash.no_records', '暂无产量记录') : '暂无产量记录';
+  if (!trend || !trend.length) { box.innerHTML = `<div class="mini-empty">${noRecordsText}</div>`; return; }
   const max = Math.max(1, ...trend.map(t => t.count));
   box.innerHTML = trend.map(t => {
     const h = Math.round(t.count / max * 100);
@@ -146,14 +156,15 @@ function renderTrend(trend) {
 
 function renderProduce(d) {
   const running = d.running;
-  set('pp-state', running ? '运行中' : '空闲');
+  const stateText = running ? (window.t ? window.t('dash.running', '运行中') : '运行中') : (window.t ? window.t('dash.idle', '空闲') : '空闲');
+  set('pp-state', stateText);
   document.getElementById('pp-state').className = 'dash-produce-state' + (running ? ' on' : '');
   const target = d.produce_target || 0, done = d.produce_registered || 0;
   set('pp-registered', done); set('pp-target', target);
   set('pp-pending', d.produce_pending || 0);
   set('pp-running', d.produce_running || 0);
   set('pp-failed', d.produce_failed || 0);
-  set('pp-msg', d.produce_message || (running ? '' : '当前无生产任务'));
+  set('pp-msg', d.produce_message || (running ? '' : ''));
   const pct = target > 0 ? Math.min(100, Math.round(done / target * 100)) : 0;
   document.getElementById('pp-bar').style.width = pct + '%';
 }
@@ -161,7 +172,8 @@ function renderProduce(d) {
 function renderPlans(plans) {
   const box = document.getElementById('plan-rows');
   const keys = Object.keys(plans || {});
-  if (!keys.length) { box.innerHTML = '<div class="mini-empty">暂无</div>'; return; }
+  const noDataText = window.t ? window.t('dash.no_data', '暂无') : '暂无';
+  if (!keys.length) { box.innerHTML = `<div class="mini-empty">${noDataText}</div>`; return; }
   box.innerHTML = keys.map(k => `<div class="mini-row"><span>${esc(k)}</span><b>${plans[k]}</b></div>`).join('');
 }
 
@@ -181,16 +193,22 @@ async function loadDashboard() {
 
   const lr = await api('/api/registrations?page=1&size=8');
   const ld = await lr.json();
+  const motherText = window.t ? window.t('dash.mother', '母号') : '母号';
+  const fissionText = window.t ? window.t('dash.fission', '裂变') : '裂变';
+  const shippedYes = window.t ? window.t('acc.shipped_yes', '已出库') : '已出库';
+  const shippedNo = window.t ? window.t('acc.shipped_no', '未出库') : '未出库';
+  const noDataText = window.t ? window.t('dash.no_data', '暂无数据') : '暂无数据';
   document.getElementById('dash-rows').innerHTML = (ld.data || []).map(x => `
     <tr>
       <td>${x.id}</td>
       <td>${esc(x.email)}</td>
-      <td>${x.is_mother ? '母号' : '裂变'}</td>
-      <td><span class="badge ${esc(x.status)}">${DASH_STATUS[x.status] || esc(x.status)}</span></td>
-      <td>${x.shipped ? '已出库' : '未出库'}</td>
+      <td>${x.is_mother ? motherText : fissionText}</td>
+      <td><span class="badge ${esc(x.status)}">${getDashStatusText(x.status)}</span></td>
+      <td>${x.shipped ? shippedYes : shippedNo}</td>
       <td>${fmtTime(x.created_at)}</td>
-    </tr>`).join('') || '<tr><td colspan="6">暂无数据</td></tr>';
+    </tr>`).join('') || `<tr><td colspan="6">${noDataText}</td></tr>`;
 }
+
 async function loadBrowser() {
   let s;
   try { s = await (await api('/api/browser/status')).json(); } catch (e) { return; }
@@ -199,11 +217,16 @@ async function loadBrowser() {
   banner.style.display = 'block';
   banner.className = 'browser-banner' + (s.phase === 'error' ? ' err' : '');
   document.getElementById('bb-ico').textContent = s.phase === 'error' ? '⚠' : '⬇';
-  document.getElementById('bb-msg').textContent = s.message || '缺少浏览器';
+  document.getElementById('bb-msg').textContent = s.message || (window.t ? window.t('dash.checking_browser', '正在检查浏览器...') : '正在检查浏览器...');
   const pct = s.percent || 0;
   document.getElementById('bb-pct').textContent = (s.phase === 'downloading' || s.phase === 'unzip') ? pct + '%' : '';
   document.getElementById('bb-bar').style.width = (s.phase === 'error' ? 100 : pct) + '%';
 }
+
+window.addEventListener('langchanged', () => {
+  loadDashboard();
+  loadBrowser();
+});
 
 loadDashboard();
 loadBrowser();

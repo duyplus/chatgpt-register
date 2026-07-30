@@ -1,11 +1,14 @@
 /* ===== 账户管理（ChatGPT + Codex 生产） ===== */
-const ACC_STATUS = {
-  pending: '待生产',
-  registering: '注册中',
-  registered: '已注册',
-  register_failed: '注册失败',
-  already_registered: '停用',
-};
+function getAccStatusText(status) {
+  const keys = {
+    pending: 'acc.sub_pending',
+    registering: 'acc.filter_registering',
+    registered: 'acc.filter_registered',
+    register_failed: 'acc.filter_failed',
+    already_registered: 'acc.filter_disabled',
+  };
+  return window.t ? window.t(keys[status] || status, status) : (status || '');
+}
 let page = 1;
 const size = 20;
 let accCache = {};
@@ -23,8 +26,9 @@ async function load() {
   accCache = {};
   accTotal = d.total || 0;
   (d.data || []).forEach(x => { accCache[x.id] = x; });
+  const noDataText = window.t ? window.t('dash.no_data', '暂无数据') : '暂无数据';
   document.getElementById('rows').innerHTML = (d.data || []).map(rowHtml).join('')
-    || '<tr><td colspan="6" style="text-align:center;color:var(--text-3)">暂无数据</td></tr>';
+    || `<tr><td colspan="6" style="text-align:center;color:var(--text-3)">${noDataText}</td></tr>`;
   const maxPage = Math.max(1, Math.ceil((d.total || 0) / size));
   renderPager('pager', page, maxPage, p => { page = p; load(); });
   syncBatchBar();
@@ -33,26 +37,33 @@ async function load() {
 function rowHtml(x) {
   const canDownload = x.status === 'registered';
   const canCheck = x.status === 'registered' || x.status === 'already_registered';
+  const statusText = getAccStatusText(x.status);
+  const shippedYes = window.t ? window.t('acc.shipped_yes', '已出库') : '已出库';
+  const shippedNo = window.t ? window.t('acc.shipped_no', '未出库') : '未出库';
+  const logTitle = window.t ? window.t('acc.btn_log', '日志') : '日志';
+  const testTitle = window.t ? window.t('acc.batch_test_alive', '测活') : '测活';
+  const dlTitle = window.t ? window.t('acc.batch_download', '下载') : '下载';
+  const delTitle = window.t ? window.t('acc.batch_delete', '删除') : '删除';
   return `
     <tr class="${accSelected.has(x.id) ? 'row-sel' : ''}">
       <td class="col-check"><input type="checkbox" ${accSelected.has(x.id) ? 'checked' : ''} onclick="toggleSelect(${x.id}, this.checked)"></td>
       <td>${esc(x.email)}</td>
       <td>${fmtTime(x.created_at)}</td>
-      <td><span class="badge ${esc(x.status)}">${ACC_STATUS[x.status] || esc(x.status)}</span></td>
+      <td><span class="badge ${esc(x.status)}">${statusText}</span></td>
       <td class="ship-cell">
-        <span class="badge ${x.shipped ? 'registered' : 'pending'}" title="下载后自动标记，不能手动修改">${x.shipped ? '已出库' : '未出库'}</span>
+        <span class="badge ${x.shipped ? 'registered' : 'pending'}">${x.shipped ? shippedYes : shippedNo}</span>
       </td>
       <td>
-        <button class="icon-btn" title="日志" onclick="showLog(${x.id})">
+        <button class="icon-btn" title="${logTitle}" onclick="showLog(${x.id})">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
         </button>
-        <button class="icon-btn" title="测活" ${canCheck ? '' : 'disabled'} onclick="checkAlive(${x.id})">
+        <button class="icon-btn" title="${testTitle}" ${canCheck ? '' : 'disabled'} onclick="checkAlive(${x.id})">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
         </button>
-        <button class="icon-btn" title="下载" ${canDownload ? '' : 'disabled'} onclick="downloadAcc(${x.id})">
+        <button class="icon-btn" title="${dlTitle}" ${canDownload ? '' : 'disabled'} onclick="downloadAcc(${x.id})">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
         </button>
-        <button class="icon-btn danger" title="删除" onclick="del(${x.id})">
+        <button class="icon-btn danger" title="${delTitle}" onclick="del(${x.id})">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
         </button>
       </td>
@@ -107,7 +118,7 @@ async function startProduce() {
     return toast(d.error || '启动生产失败', true);
   }
   closeModal('produce-modal');
-  toast('已开始生产 ' + count + ' 个账号');
+  toast((window.t ? window.t('common.success', '操作成功') : '操作成功'));
   loadProduce();
   load();
 }
@@ -124,9 +135,8 @@ let logAccId = null;
 
 async function showLog(id) {
   logAccId = id;
-  // 清空旧日志，避免打开新账号时残留上一次的内容
-  document.getElementById('log-title').textContent = '执行日志';
-  document.getElementById('log-body').textContent = '加载中...';
+  document.getElementById('log-title').textContent = window.t ? window.t('acc.modal_log_title', '执行日志') : '执行日志';
+  document.getElementById('log-body').textContent = window.t ? window.t('mb.loading', '加载中...') : '加载中...';
   document.getElementById('log-shot-btn').style.display = 'none';
   document.getElementById('log-modal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
@@ -140,10 +150,11 @@ async function refreshLog(silent) {
   const r = await api('/api/registrations/' + logAccId + '/logs');
   if (!r.ok) { if (!silent) toast('读取日志失败', true); return; }
   const d = await r.json();
-  document.getElementById('log-title').textContent = '执行日志 · ' + d.email;
+  const titleLog = window.t ? window.t('acc.modal_log_title', '执行日志') : '执行日志';
+  document.getElementById('log-title').textContent = titleLog + ' · ' + d.email;
   document.getElementById('log-shot-btn').style.display = d.has_shot ? '' : 'none';
   const parts = [];
-  if (d.note) parts.push('备注: ' + d.note);
+  if (d.note) parts.push('Note: ' + d.note);
   if (parts.length) parts.push('');
   parts.push(d.log || '（无执行日志）');
   document.getElementById('log-body').textContent = parts.join('\n');
@@ -188,13 +199,14 @@ function clearSelection() { accSelected.clear(); load(); }
 function syncBatchBar() {
   const bar = document.getElementById('acc-batch');
   bar.style.display = accSelected.size ? 'flex' : 'none';
-  document.getElementById('acc-batch-count').textContent = '已选 ' + accSelected.size + ' 项';
+  const selTpl = window.t ? window.t('acc.selected', `已选 ${accSelected.size} 项`) : `已选 ${accSelected.size} 项`;
+  document.getElementById('acc-batch-count').textContent = selTpl.replace('{n}', accSelected.size);
   const all = document.getElementById('acc-check-all');
   const ids = Object.keys(accCache).map(Number);
   all.checked = ids.length > 0 && ids.every(id => accSelected.has(id));
 }
 
-/* ===== 下载（access_token 纯文本，一行一个；下载即出库） ===== */
+/* ===== 下载 ===== */
 async function downloadAcc(id) {
   await downloadByIds([id], 'access_token_' + id + '.txt');
 }
@@ -219,10 +231,10 @@ async function downloadByIds(ids, filename) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(a.href);
-  load(); // 刷新出库状态
+  load();
 }
 
-/* ===== 测活（用 access_token 请求 usage_limits，失败自动停用） ===== */
+/* ===== 测活 ===== */
 async function checkAlive(id) {
   await checkAliveByIds([id]);
 }
@@ -232,7 +244,7 @@ async function checkAliveSelected() {
   await checkAliveByIds(ids);
 }
 async function checkAliveByIds(ids) {
-  toast('测活中...(' + ids.length + ' 个)');
+  toast('Checking... (' + ids.length + ')');
   const r = await api('/api/check-alive', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -243,8 +255,8 @@ async function checkAliveByIds(ids) {
     return toast(d.error || '测活失败', true);
   }
   const d = await r.json();
-  let m = '测活完成：存活 ' + (d.alive || 0) + '，停用 ' + (d.dead || 0);
-  if (d.error) m += '，异常 ' + d.error;
+  let m = 'Alive: ' + (d.alive || 0) + ', Dead: ' + (d.dead || 0);
+  if (d.error) m += ', Err: ' + d.error;
   toast(m);
   load();
 }
@@ -253,20 +265,20 @@ async function checkAliveByIds(ids) {
 async function delSelected() {
   const ids = [...accSelected];
   if (!ids.length) return;
-  if (!confirm('确定删除所选 ' + ids.length + ' 个账户?')) return;
+  if (!confirm('Delete selected ' + ids.length + ' accounts?')) return;
   for (const id of ids) {
     await api('/api/registrations/' + id, { method: 'DELETE' });
     accSelected.delete(id);
   }
-  toast('已删除 ' + ids.length + ' 个');
+  toast((window.t ? window.t('common.success', '操作成功') : 'Deleted ') + ids.length);
   load();
 }
 async function del(id) {
-  if (!confirm('确定删除账户 #' + id + ' ?')) return;
+  if (!confirm('Delete account #' + id + ' ?')) return;
   const r = await api('/api/registrations/' + id, { method: 'DELETE' });
   if (!r.ok) return toast('删除失败', true);
   accSelected.delete(id);
-  toast('已删除');
+  toast((window.t ? window.t('common.success', '操作成功') : 'Deleted'));
   load();
 }
 
@@ -274,6 +286,12 @@ document.getElementById('search').addEventListener('keydown', e => {
   if (e.key === 'Enter') { page = 1; load(); }
 });
 document.getElementById('filter-status').addEventListener('change', () => { page = 1; load(); });
+
+window.addEventListener('langchanged', () => {
+  load();
+  loadProduce();
+  loadBrowserGate();
+});
 
 load();
 loadProduce();

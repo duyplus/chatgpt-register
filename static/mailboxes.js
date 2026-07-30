@@ -3,18 +3,21 @@ let mbPage = 1;
 const size = 20;
 let mbCache = {};
 
-const MB_STATUS = {
-  unverified: '待验证',
-  verifying: '验证中',
-  verify_failed: '验证失败',
-  verified: '已验证',
-};
+function getMbStatusText(status) {
+  const keys = {
+    unverified: 'mb.status_unverified',
+    verifying: 'mb.status_verifying',
+    verify_failed: 'mb.status_verify_failed',
+    verified: 'mb.status_verified',
+  };
+  return window.t ? window.t(keys[status] || status, status) : (status || '');
+}
 
 let mbLoading = false;
 const mbSelected = new Set();
 
 async function loadMailboxes() {
-  if (mbLoading) return; // 避免请求重叠
+  if (mbLoading) return;
   mbLoading = true;
   try {
     const q = document.getElementById('mb-search').value.trim();
@@ -26,18 +29,20 @@ async function loadMailboxes() {
     const d = await r.json();
     mbCache = {};
     (d.data || []).forEach(x => (mbCache[x.id] = x));
+    const fetchTitle = window.t ? window.t('mb.fetch_title', '取件') : '取件';
+    const delTitle = window.t ? window.t('acc.batch_delete', '删除') : '删除';
     document.getElementById('mb-rows').innerHTML = (d.data || []).map(x => `
       <tr class="${mbSelected.has(x.id) ? 'row-sel' : ''}">
         <td class="col-check"><input type="checkbox" ${mbSelected.has(x.id) ? 'checked' : ''} onclick="toggleSelect(${x.id}, this.checked)"></td>
         <td>${esc(x.email)}${x.provider === 'varymail' ? ' <span class="badge vary">vary</span>' : ''}</td>
         <td>${Number(x.register_count || 0)} / ${Number(x.register_limit || 0)}</td>
         <td>${fmtTime(x.created_at)}</td>
-        <td><span class="badge ${esc(x.status)}">${MB_STATUS[x.status] || esc(x.status)}</span></td>
+        <td><span class="badge ${esc(x.status)}">${getMbStatusText(x.status)}</span></td>
         <td>
-          ${x.status === 'verified' ? `<button class="icon-btn" title="取件" onclick="openMailModal(${x.id})">
+          ${x.status === 'verified' ? `<button class="icon-btn" title="${fetchTitle}" onclick="openMailModal(${x.id})">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
           </button>` : ''}
-          <button class="icon-btn danger" title="删除" onclick="delMailbox(${x.id})">
+          <button class="icon-btn danger" title="${delTitle}" onclick="delMailbox(${x.id})">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
           </button>
         </td>
@@ -71,7 +76,8 @@ function clearSelection() {
 function syncBatchBar() {
   const bar = document.getElementById('mb-batch');
   bar.style.display = mbSelected.size ? 'flex' : 'none';
-  document.getElementById('mb-batch-count').textContent = '已选 ' + mbSelected.size + ' 项';
+  const selTpl = window.t ? window.t('mb.selected', `已选 ${mbSelected.size} 项`) : `已选 ${mbSelected.size} 项`;
+  document.getElementById('mb-batch-count').textContent = selTpl.replace('{n}', mbSelected.size);
   const all = document.getElementById('mb-check-all');
   const ids = Object.keys(mbCache).map(Number);
   all.checked = ids.length > 0 && ids.every(id => mbSelected.has(id));
@@ -439,6 +445,10 @@ document.getElementById('mb-filter').addEventListener('change', () => { mbPage =
 /* 点遮罩关闭取件弹窗时也要停轮询 */
 document.getElementById('mail-modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeMailModal();
+});
+
+window.addEventListener('langchanged', () => {
+  loadMailboxes();
 });
 
 loadMailboxes();

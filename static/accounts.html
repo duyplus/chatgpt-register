@@ -3,53 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>账户管理 · ChatGPT 注册管理</title>
+<title data-i18n="acc.title">账户管理 · ChatGPT 注册管理</title>
 <link rel="stylesheet" href="/static/style.css?v=13">
 </head>
 <body data-page="accounts">
 <div class="layout">
   <main class="main">
-    <h1 class="page-title">账户管理</h1>
+    <h1 class="page-title" data-i18n="acc.title">账户管理</h1>
 
     <!-- 生产进度概览 -->
     <div class="produce-bar" id="produce-bar">
-      <div class="produce-stat"><span class="produce-num" id="pd-pending">0</span><span class="produce-lbl">待生产</span></div>
+      <div class="produce-stat"><span class="produce-num" id="pd-pending">0</span><span class="produce-lbl" data-i18n="acc.sub_pending">待生产</span></div>
       <span class="produce-dot">·</span>
-      <div class="produce-stat"><span class="produce-num running" id="pd-running">0</span><span class="produce-lbl">在跑</span></div>
+      <div class="produce-stat"><span class="produce-num running" id="pd-running">0</span><span class="produce-lbl" data-i18n="acc.sub_running">在跑</span></div>
       <span class="produce-dot">·</span>
-      <div class="produce-stat"><span class="produce-num ok" id="pd-registered">0</span><span class="produce-lbl">已注册</span></div>
+      <div class="produce-stat"><span class="produce-num ok" id="pd-registered">0</span><span class="produce-lbl" data-i18n="acc.sub_registered">已注册</span></div>
       <span class="produce-dot">·</span>
-      <div class="produce-stat"><span class="produce-num bad" id="pd-failed">0</span><span class="produce-lbl">生产失败</span></div>
+      <div class="produce-stat"><span class="produce-num bad" id="pd-failed">0</span><span class="produce-lbl" data-i18n="acc.sub_failed">生产失败</span></div>
       <div class="produce-actions">
-        <button class="px-btn danger" id="pd-stop" style="display:none" onclick="stopProduce()">停止</button>
+        <button class="px-btn danger" id="pd-stop" style="display:none" onclick="stopProduce()" data-i18n="acc.stop">停止</button>
       </div>
     </div>
 
     <div class="toolbar">
-      <input id="search" class="px-input search" placeholder="搜索 email / 备注 ...">
+      <input id="search" class="px-input search" placeholder="搜索 email / 备注 ..." data-i18n-ph="acc.search_placeholder">
       <select id="filter-status" class="px-input">
-        <option value="">全部状态</option>
-        <option value="registering">注册中</option>
-        <option value="registered">已注册</option>
-        <option value="register_failed">注册失败</option>
-        <option value="already_registered">停用</option>
+        <option value="" data-i18n="acc.all_status">全部状态</option>
+        <option value="registering" data-i18n="acc.filter_registering">注册中</option>
+        <option value="registered" data-i18n="acc.filter_registered">已注册</option>
+        <option value="register_failed" data-i18n="acc.filter_failed">注册失败</option>
+        <option value="already_registered" data-i18n="acc.filter_disabled">停用</option>
       </select>
-      <button class="px-btn primary" id="produce-btn" onclick="openProduceModal()">生产</button>
+      <button class="px-btn primary" id="produce-btn" onclick="openProduceModal()" data-i18n="acc.produce">生产</button>
     </div>
 
     <div class="batch-bar" id="acc-batch" style="display:none">
       <span id="acc-batch-count">已选 0 项</span>
-      <button class="px-btn" onclick="checkAliveSelected()">批量测活</button>
-      <button class="px-btn" onclick="downloadSelected()">批量下载</button>
-      <button class="px-btn danger" onclick="delSelected()">删除所选</button>
-      <button class="px-btn ghost" onclick="clearSelection()">取消</button>
+      <button class="px-btn" onclick="checkAliveSelected()" data-i18n="acc.batch_test_alive">批量测活</button>
+      <button class="px-btn" onclick="downloadSelected()" data-i18n="acc.batch_download">批量下载</button>
+      <button class="px-btn danger" onclick="delSelected()" data-i18n="acc.batch_delete">删除所选</button>
+      <button class="px-btn ghost" onclick="clearSelection()" data-i18n="common.cancel">取消</button>
     </div>
 
     <div class="table-wrap">
       <table class="px-table">
         <thead><tr>
           <th class="col-check"><input type="checkbox" id="acc-check-all" onclick="toggleSelectAll(this.checked)"></th>
-          <th>邮箱</th><th>创建时间</th><th>状态</th><th>出库状态</th><th>操作</th>
+          <th data-i18n="acc.col_email">邮箱</th><th data-i18n="acc.col_created_at">创建时间</th><th data-i18n="acc.col_status">状态</th><th data-i18n="acc.col_shipped">出库状态</th><th data-i18n="acc.col_actions">操作</th>
         </tr></thead>
         <tbody id="rows"></tbody>
       </table>
@@ -61,15 +61,15 @@
 <!-- 生产 modal -->
 <div class="modal-mask" id="produce-modal" style="display:none">
   <div class="modal px-panel" style="width:420px">
-    <h2>生产账号</h2>
-    <div class="import-sub">填写要生产的账号数量，后台会用「母号 + 裂变」自动注册 ChatGPT + Codex 账号。</div>
+    <h2 data-i18n="acc.modal_produce_title">生产账号</h2>
+    <div class="import-sub" data-i18n="acc.modal_produce_sub">填写要生产的账号数量，后台会用「母号 + 裂变」自动注册 ChatGPT + Codex 账号。</div>
     <label class="produce-field">
-      <span>生产数量</span>
+      <span data-i18n="acc.produce_qty">生产数量</span>
       <input id="produce-count" class="px-input" type="number" min="1" value="10">
     </label>
     <div class="modal-actions">
-      <button class="px-btn" onclick="closeModal('produce-modal')">取消</button>
-      <button class="px-btn primary" onclick="startProduce()">开始生产</button>
+      <button class="px-btn" onclick="closeModal('produce-modal')" data-i18n="common.cancel">取消</button>
+      <button class="px-btn primary" onclick="startProduce()" data-i18n="acc.start_produce">开始生产</button>
     </div>
   </div>
 </div>
@@ -77,11 +77,11 @@
 <!-- 日志 modal -->
 <div class="modal-mask" id="log-modal" style="display:none">
   <div class="modal px-panel" style="width:640px">
-    <h2 id="log-title">执行日志</h2>
+    <h2 id="log-title" data-i18n="acc.modal_log_title">执行日志</h2>
     <pre id="log-body" class="log-body"></pre>
     <div class="modal-actions">
-      <button class="px-btn ghost" id="log-shot-btn" style="display:none;margin-right:auto" onclick="viewShot()">异常截图</button>
-      <button class="px-btn" onclick="closeLog()">关闭</button>
+      <button class="px-btn ghost" id="log-shot-btn" style="display:none;margin-right:auto" onclick="viewShot()" data-i18n="acc.error_shot">异常截图</button>
+      <button class="px-btn" onclick="closeLog()" data-i18n="acc.close">关闭</button>
     </div>
   </div>
 </div>
@@ -89,12 +89,12 @@
 <!-- 异常截图 modal -->
 <div class="modal-mask" id="shot-modal" style="display:none">
   <div class="modal px-panel" style="width:900px;max-width:94vw">
-    <h2 id="shot-title">异常截图</h2>
+    <h2 id="shot-title" data-i18n="acc.error_shot">异常截图</h2>
     <div style="max-height:70vh;overflow:auto;background:#000">
       <img id="shot-img" style="display:block;width:100%" alt="异常截图">
     </div>
     <div class="modal-actions">
-      <button class="px-btn" onclick="closeShot()">关闭</button>
+      <button class="px-btn" onclick="closeShot()" data-i18n="acc.close">关闭</button>
     </div>
   </div>
 </div>
