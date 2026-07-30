@@ -42,6 +42,11 @@
       if (translated) el.title = translated;
     });
 
+    // Rebuild custom enhanced selects from layout.js
+    scope.querySelectorAll('select').forEach(sel => {
+      if (typeof sel._rebuild === 'function') sel._rebuild();
+    });
+
     // Sync language selector UI elements
     document.querySelectorAll('.lang-switcher-select').forEach(sel => {
       sel.value = getLang();
