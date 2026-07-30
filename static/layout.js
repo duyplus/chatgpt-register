@@ -142,23 +142,13 @@ function renderPager(elId, page, maxPage, go) {
   const items = [
     ['dashboard', 'nav.dashboard', '仪表盘', 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z'],
     ['mailboxes', 'nav.mailboxes', '邮箱管理', 'M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z'],
-    ['accounts', 'nav.accounts', '账户管理', 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'],
+    ['accounts', 'nav.accounts', '账户管理', 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'],
     ['settings', 'nav.settings', '系统设置', 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z'],
   ];
   const nav = items.map(([key, i18nKey, label, d]) => `
     <a class="menu-item${key === page ? ' active' : ''}" href="/${key}">
       <svg viewBox="0 0 24 24"><path d="${d}"/></svg><span data-i18n="${i18nKey}">${window.t ? window.t(i18nKey, label) : label}</span>
     </a>`).join('');
-
-  const currentLang = window.i18n ? window.i18n.getLang() : 'zh';
-  const langSwitcherHtml = `
-    <div class="menu-item lang-switcher-item" style="display:flex;align-items:center;padding:8px 12px;margin-top:auto;gap:6px;border-top:1px solid rgba(255,255,255,0.08);">
-      <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;flex-shrink:0;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A8.03 8.03 0 0 1 5.08 16zm2.95-8H5.08a8.03 8.03 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM4.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
-      <select class="lang-switcher-select" onchange="window.i18n && window.i18n.setLang(this.value)" style="background:transparent;border:none;color:inherit;font-size:13px;cursor:pointer;outline:none;width:100%;">
-        <option value="zh" ${currentLang === 'zh' ? 'selected' : ''} style="background:#1e293b;color:#fff;">中文</option>
-        <option value="en" ${currentLang === 'en' ? 'selected' : ''} style="background:#1e293b;color:#fff;">English</option>
-      </select>
-    </div>`;
 
   const aside = document.createElement('aside');
   aside.className = 'sidebar px-panel';
@@ -169,11 +159,24 @@ function renderPager(elId, page, maxPage, go) {
     </div>
     <div class="menu-group" data-i18n="nav.group">${window.t ? window.t('nav.group', '导航') : '导航'}</div>
     <nav id="menu">${nav}</nav>
-    ${langSwitcherHtml}
     <a class="menu-item logout-item" href="javascript:logout()">
       <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg><span data-i18n="nav.logout">${window.t ? window.t('nav.logout', '退出登录') : '退出登录'}</span>
     </a>`;
   document.querySelector('.layout').prepend(aside);
+
+  // 注入右上角语言切换按钮
+  const currentLang = window.i18n ? window.i18n.getLang() : 'zh';
+  const topLangSwitcher = document.createElement('div');
+  topLangSwitcher.className = 'top-lang-switcher';
+  topLangSwitcher.style.cssText = 'position:fixed;top:18px;right:24px;z-index:9999;display:flex;align-items:center;background:rgba(30,41,59,0.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:4px 12px;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,0.25);';
+  topLangSwitcher.innerHTML = `
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#94a3b8;flex-shrink:0;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A8.03 8.03 0 0 1 5.08 16zm2.95-8H5.08a8.03 8.03 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM4.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+    <select class="lang-switcher-select" onchange="window.i18n && window.i18n.setLang(this.value)" style="background:transparent;border:none;color:#f8fafc;font-size:13px;font-weight:500;cursor:pointer;outline:none;">
+      <option value="zh" ${currentLang === 'zh' ? 'selected' : ''} style="background:#1e293b;color:#fff;">中文</option>
+      <option value="en" ${currentLang === 'en' ? 'selected' : ''} style="background:#1e293b;color:#fff;">English</option>
+    </select>
+  `;
+  document.body.appendChild(topLangSwitcher);
 
   document.querySelectorAll('.modal-mask').forEach(m => {
     m.addEventListener('click', e => {
