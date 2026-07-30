@@ -3,28 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>登录 · ChatGPT 注册管理</title>
+<title data-i18n="login.title">登录 · ChatGPT 注册管理</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="login-body">
 <div class="login-wrap">
-  <div class="login-card px-panel">
+  <div class="login-card px-panel" style="position:relative;">
+    <div style="position:absolute;top:16px;right:16px;">
+      <select class="lang-switcher-select" onchange="window.i18n && window.i18n.setLang(this.value)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;">
+        <option value="zh" style="background:#1e293b;color:#fff;">中文</option>
+        <option value="en" style="background:#1e293b;color:#fff;">English</option>
+      </select>
+    </div>
     <div class="login-head">
       <div class="login-logo">C</div>
       <div>
-        <div class="login-title">ChatGPT 注册管理系统</div>
-        <div class="login-desc">请输入访问密码登录</div>
+        <div class="login-title" data-i18n="login.title">ChatGPT 注册管理系统</div>
+        <div class="login-desc" data-i18n="login.desc">请输入访问密码登录</div>
       </div>
     </div>
     <div class="login-form">
-      <label class="login-label" for="lg-pass">密码</label>
-      <input id="lg-pass" class="px-input login-input" type="password" placeholder="请输入密码" autocomplete="current-password" autofocus>
-      <button class="login-btn" onclick="doLogin()">登录</button>
+      <label class="login-label" for="lg-pass" data-i18n="login.password">密码</label>
+      <input id="lg-pass" class="px-input login-input" type="password" placeholder="请输入密码" data-i18n-ph="login.placeholder" autocomplete="current-password" autofocus>
+      <button class="login-btn" onclick="doLogin()" data-i18n="login.btn">登录</button>
     </div>
   </div>
-  <div class="login-copyright">Copyright © 2026 ChatGPT 注册管理</div>
+  <div class="login-copyright" data-i18n="login.copyright">Copyright © 2026 ChatGPT 注册管理</div>
 </div>
 <div id="toast" class="toast" style="display:none"></div>
+<script src="/static/i18n/zh.js"></script>
+<script src="/static/i18n/en.js"></script>
+<script src="/static/i18n/i18n.js"></script>
 <script src="/static/layout.js"></script>
 <script>
 if (getToken()) location.href = '/dashboard';
