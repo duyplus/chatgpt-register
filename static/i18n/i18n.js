@@ -2,7 +2,7 @@
   const LANG_KEY = 'app_lang';
 
   function getLang() {
-    return localStorage.getItem(LANG_KEY) || 'zh';
+    return localStorage.getItem(LANG_KEY) || 'en';
   }
 
   function setLang(lang) {

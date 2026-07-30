@@ -165,7 +165,7 @@ function renderPager(elId, page, maxPage, go) {
   document.querySelector('.layout').prepend(aside);
 
   // 注入右上角语言切换按钮
-  const currentLang = window.i18n ? window.i18n.getLang() : 'zh';
+  const currentLang = window.i18n ? window.i18n.getLang() : 'en';
   const topLangSwitcher = document.createElement('div');
   topLangSwitcher.className = 'top-lang-switcher';
   topLangSwitcher.style.cssText = 'position:fixed;top:18px;right:24px;z-index:9999;display:flex;align-items:center;background:rgba(30,41,59,0.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:4px 12px;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,0.25);';
