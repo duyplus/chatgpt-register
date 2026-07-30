@@ -1,413 +1,450 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title data-i18n="sett.title">系统设置 · ChatGPT 注册管理</title>
-<link rel="stylesheet" href="/static/style.css?v=8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="sett.title">系统设置 · ChatGPT 注册管理</title>
+  <link rel="stylesheet" href="/static/style.css?v=8">
 </head>
+
 <body data-page="settings">
-<div class="layout">
-  <main class="main">
-    <h1 class="page-title" data-i18n="sett.title">系统设置</h1>
-    <p class="page-sub" data-i18n="sett.sub">配置注册规则、代理与账户安全</p>
+  <div class="layout">
+    <main class="main">
+      <h1 class="page-title" data-i18n="sett.title">系统设置</h1>
+      <p class="page-sub" data-i18n="sett.sub">配置注册规则、代理与账户安全</p>
 
-    <div class="settings-grid">
-      <div class="px-panel settings-card">
-        <div class="settings-head">
-          <span class="settings-icon blue">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg>
-          </span>
-          <div>
-            <h2 data-i18n="sett.basic">基本设置</h2>
-            <p data-i18n="sett.basic_sub">注册并发控制</p>
+      <div class="settings-grid">
+        <div class="px-panel settings-card">
+          <div class="settings-head">
+            <span class="settings-icon blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M12 2v20M2 12h20" />
+                <circle cx="12" cy="12" r="9" />
+              </svg>
+            </span>
+            <div>
+              <h2 data-i18n="sett.basic">基本设置</h2>
+              <p data-i18n="sett.basic_sub">注册并发控制</p>
+            </div>
           </div>
-        </div>
-        <div class="field">
-          <label data-i18n="sett.max_concurrency">最大并发数</label>
-          <span class="field-hint" data-i18n="sett.max_concurrency_hint">注册时同时执行的任务数上限</span>
-          <div class="input-suffix">
-            <input id="set-max-concurrency" class="px-input" type="number" min="1" max="100" placeholder="Default 10">
-            <span class="suffix" data-i18n="sett.unit_items">个</span>
-          </div>
-        </div>
-        <div class="field">
-          <label data-i18n="sett.fission_count">裂变数量</label>
-          <span class="field-hint" data-i18n="sett.fission_count_hint">每个账号最多可继续裂变的次数</span>
-          <div class="input-suffix">
-            <input id="set-fission-count" class="px-input" type="number" min="1" max="100" placeholder="Default 5">
-            <span class="suffix" data-i18n="sett.unit_times">次</span>
-          </div>
-        </div>
-        <div class="settings-foot">
-          <button class="px-btn primary" onclick="saveSettings()" data-i18n="sett.save_settings">保存设置</button>
-        </div>
-      </div>
-
-      <div class="px-panel settings-card">
-        <div class="settings-head">
-          <span class="settings-icon violet">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
-          </span>
-          <div>
-            <h2 data-i18n="sett.email_source">邮箱来源</h2>
-            <p data-i18n="sett.email_source_sub">选择注册用邮箱：本地 Outlook 或 varymail 取件</p>
-          </div>
-        </div>
-        <div class="field">
-          <label data-i18n="sett.source">来源</label>
-          <span class="field-hint" data-i18n="sett.source_hint">Outlook = 本地已验证邮箱 + 别名裂变；varymail = 按次购买取件（无裂变）</span>
-          <select id="set-email-source" class="px-input" onchange="onSourceChange()">
-            <option value="outlook" data-i18n="sett.outlook_opt">本地 Outlook 邮箱</option>
-            <option value="varymail" data-i18n="sett.varymail_opt">varymail 取件</option>
-          </select>
-        </div>
-        <div id="varymail-fields">
           <div class="field">
-            <label>varymail API Key</label>
-            <span class="field-hint" data-i18n="sett.varymail_hint">在 vary.email 后台获取，仅保存在本系统。服务固定用 chatgpt，API 地址固定 https://vary.email</span>
-            <input id="set-varymail-key" class="px-input" type="text" autocomplete="off" spellcheck="false" placeholder="API Key">
+            <label data-i18n="sett.max_concurrency">最大并发数</label>
+            <span class="field-hint" data-i18n="sett.max_concurrency_hint">注册时同时执行的任务数上限</span>
+            <div class="input-suffix">
+              <input id="set-max-concurrency" class="px-input" type="number" min="1" max="100" placeholder="Default 10">
+              <span class="suffix" data-i18n="sett.unit_items">个</span>
+            </div>
           </div>
+          <div class="field">
+            <label data-i18n="sett.fission_count">裂变数量</label>
+            <span class="field-hint" data-i18n="sett.fission_count_hint">每个账号最多可继续裂变的次数</span>
+            <div class="input-suffix">
+              <input id="set-fission-count" class="px-input" type="number" min="1" max="100" placeholder="Default 5">
+              <span class="suffix" data-i18n="sett.unit_times">次</span>
+            </div>
+          </div>
+          <div class="settings-foot">
+            <button class="px-btn primary" onclick="saveSettings()" data-i18n="sett.save_settings">保存设置</button>
+          </div>
+        </div>
+
+        <div class="px-panel settings-card">
+          <div class="settings-head">
+            <span class="settings-icon violet">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-10 6L2 7" />
+              </svg>
+            </span>
+            <div>
+              <h2 data-i18n="sett.email_source">邮箱来源</h2>
+              <p data-i18n="sett.email_source_sub">选择注册用邮箱：本地 Outlook 或 varymail 取件</p>
+            </div>
+          </div>
+          <div class="field">
+            <label data-i18n="sett.source">来源</label>
+            <span class="field-hint" data-i18n="sett.source_hint">Outlook = 本地已验证邮箱 + 别名裂变；varymail = 按次购买取件（无裂变）</span>
+            <select id="set-email-source" class="px-input" onchange="onSourceChange()">
+              <option value="outlook" data-i18n="sett.outlook_opt">本地 Outlook 邮箱</option>
+              <option value="varymail" data-i18n="sett.varymail_opt">varymail 取件</option>
+            </select>
+          </div>
+          <div id="varymail-fields">
+            <div class="field">
+              <label>varymail API Key</label>
+              <span class="field-hint" data-i18n="sett.varymail_hint">在 vary.email 后台获取，仅保存在本系统。服务固定用 chatgpt，API 地址固定
+                https://vary.email</span>
+              <input id="set-varymail-key" class="px-input" type="text" autocomplete="off" spellcheck="false"
+                placeholder="API Key">
+            </div>
+            <div class="field">
+              <div class="field-label-row">
+                <label data-i18n="sett.varymail_stock">chatgpt 服务库存</label>
+                <span id="varymail-price" class="count-badge"></span>
+              </div>
+              <span class="field-hint" data-i18n="sett.varymail_stock_hint">生产前会自动判断库存；点下面按钮验证 Key 并查看当前可用数</span>
+            </div>
+            <div id="varymail-result" class="proxy-result" style="display:none"></div>
+            <div class="settings-foot">
+              <button id="varymail-check-btn" class="px-btn ghost" onclick="checkVarymail()"
+                data-i18n="sett.check_stock">查询 chatgpt 库存</button>
+            </div>
+          </div>
+          <div class="settings-foot">
+            <button class="px-btn primary" onclick="saveVarymail()" data-i18n="sett.save_source">保存来源设置</button>
+          </div>
+        </div>
+
+        <div class="px-panel settings-card">
+          <div class="settings-head">
+            <span class="settings-icon violet">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+                <path d="M21 3v5h-5" />
+              </svg>
+            </span>
+            <div>
+              <h2 data-i18n="sett.auto_replenish">自动补号</h2>
+              <p data-i18n="sett.auto_replenish_sub">定时把已注册账号推送到 image2api 账号池</p>
+            </div>
+          </div>
+          <label class="switch-row">
+            <input id="set-replenish-enabled" type="checkbox">
+            <span class="switch-ui"></span>
+            <span class="switch-label" data-i18n="sett.enable_replenish">开启自动补号</span>
+          </label>
+          <div class="field">
+            <label data-i18n="sett.replenish_threshold">存活少于多少补</label>
+            <span class="field-hint" data-i18n="sett.replenish_threshold_hint">每 30 秒检查一次目标站 openai
+              存活号数，低于该值就用未出库的已注册账号补足</span>
+            <div class="input-suffix">
+              <input id="set-replenish-threshold" class="px-input" type="number" min="1" max="10000"
+                placeholder="e.g. 20">
+              <span class="suffix" data-i18n="sett.unit_items">个</span>
+            </div>
+          </div>
+          <div class="field">
+            <label data-i18n="sett.target_site">目标补号网站</label>
+            <span class="field-hint" data-i18n="sett.target_site_hint">image2api 地址，如 https://your.domain 或
+              http://1.2.3.4:2000</span>
+            <input id="set-replenish-url" class="px-input" type="text" autocomplete="off" spellcheck="false"
+              placeholder="https://your.domain">
+          </div>
+          <div class="field">
+            <label data-i18n="sett.account">账号</label>
+            <span class="field-hint" data-i18n="sett.account_hint">image2api 后台管理员账号（邮箱或用户名）</span>
+            <input id="set-replenish-user" class="px-input" type="text" autocomplete="off" spellcheck="false"
+              placeholder="admin@example.com">
+          </div>
+          <div class="field">
+            <label data-i18n="sett.password">密码</label>
+            <input id="set-replenish-pass" class="px-input" type="password" autocomplete="new-password"
+              placeholder="Password">
+          </div>
+          <label class="switch-row">
+            <input id="set-replenish-autoproduce" type="checkbox">
+            <span class="switch-ui"></span>
+            <span class="switch-label" data-i18n="sett.auto_produce">没现成号时自动生产（并发用上面「最大并发数」，滚动生产、满 5 个推一次）</span>
+          </label>
+          <div class="settings-foot">
+            <button class="px-btn primary" onclick="saveReplenish()" data-i18n="sett.save_replenish">保存补号配置</button>
+          </div>
+        </div>
+
+        <div class="px-panel settings-card">
+          <div class="settings-head">
+            <span class="settings-icon violet">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="10" rx="2" />
+                <path d="M6 12h.01M10 12h.01M14 12h4" />
+              </svg>
+            </span>
+            <div>
+              <h2 data-i18n="sett.proxy_config">代理配置</h2>
+              <p data-i18n="sett.proxy_sub">注册时通过代理访问，降低风控</p>
+            </div>
+          </div>
+          <label class="switch-row">
+            <input id="set-proxy-enabled" type="checkbox">
+            <span class="switch-ui"></span>
+            <span class="switch-label" data-i18n="sett.enable_proxy">启用代理</span>
+          </label>
           <div class="field">
             <div class="field-label-row">
-              <label data-i18n="sett.varymail_stock">chatgpt 服务库存</label>
-              <span id="varymail-price" class="count-badge"></span>
+              <label data-i18n="sett.proxy_list">代理列表</label>
+              <span id="proxy-count" class="count-badge">0 proxies</span>
             </div>
-            <span class="field-hint" data-i18n="sett.varymail_stock_hint">生产前会自动判断库存；点下面按钮验证 Key 并查看当前可用数</span>
+            <span class="field-hint" data-i18n="sett.proxy_hint">每行一个，支持
+              http(s)://user:pass@host:port、socks5://host:port、host:port:user:pass</span>
+            <textarea id="set-proxy-list" class="px-input proxy-textarea" rows="5" spellcheck="false" autocomplete="off"
+              autocorrect="off" autocapitalize="off" oninput="updateProxyCount()"
+              placeholder="http://user:pass@1.2.3.4:8080&#10;socks5://1.2.3.4:1080&#10;1.2.3.4:8080:user:pass"></textarea>
           </div>
-          <div id="varymail-result" class="proxy-result" style="display:none"></div>
+          <div id="proxy-test-result" class="proxy-result" style="display:none"></div>
           <div class="settings-foot">
-            <button id="varymail-check-btn" class="px-btn ghost" onclick="checkVarymail()" data-i18n="sett.check_stock">查询 chatgpt 库存</button>
+            <button id="proxy-test-btn" class="px-btn ghost" onclick="testProxy()"
+              data-i18n="sett.test_proxy">测试代理</button>
+            <button class="px-btn primary" onclick="saveProxy()" data-i18n="sett.save_proxy">保存代理</button>
           </div>
         </div>
-        <div class="settings-foot">
-          <button class="px-btn primary" onclick="saveVarymail()" data-i18n="sett.save_source">保存来源设置</button>
+
+        <div class="px-panel settings-card">
+          <div class="settings-head">
+            <span class="settings-icon amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </span>
+            <div>
+              <h2 data-i18n="sett.change_pass">修改密码</h2>
+              <p data-i18n="sett.change_pass_sub">修改后旧登录会立即失效</p>
+            </div>
+          </div>
+          <div class="field">
+            <label data-i18n="sett.old_pass">原密码</label>
+            <input id="pw-old" class="px-input" type="password" autocomplete="current-password">
+          </div>
+          <div class="field">
+            <label data-i18n="sett.new_pass">新密码</label>
+            <span class="field-hint" data-i18n="sett.new_pass_hint">Length > 6</span>
+            <input id="pw-new" class="px-input" type="password" autocomplete="new-password">
+          </div>
+          <div class="field">
+            <label data-i18n="sett.new_pass_confirm">确认新密码</label>
+            <input id="pw-new2" class="px-input" type="password" autocomplete="new-password">
+          </div>
+          <div class="settings-foot">
+            <button class="px-btn primary" onclick="changePassword()" data-i18n="sett.submit_change_pass">修改密码</button>
+          </div>
         </div>
       </div>
+    </main>
+  </div>
 
-      <div class="px-panel settings-card">
-        <div class="settings-head">
-          <span class="settings-icon violet">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
-          </span>
-          <div>
-            <h2 data-i18n="sett.auto_replenish">自动补号</h2>
-            <p data-i18n="sett.auto_replenish_sub">定时把已注册账号推送到 image2api 账号池</p>
-          </div>
-        </div>
-        <label class="switch-row">
-          <input id="set-replenish-enabled" type="checkbox">
-          <span class="switch-ui"></span>
-          <span class="switch-label" data-i18n="sett.enable_replenish">开启自动补号</span>
-        </label>
-        <div class="field">
-          <label data-i18n="sett.replenish_threshold">存活少于多少补</label>
-          <span class="field-hint" data-i18n="sett.replenish_threshold_hint">每 30 秒检查一次目标站 openai 存活号数，低于该值就用未出库的已注册账号补足</span>
-          <div class="input-suffix">
-            <input id="set-replenish-threshold" class="px-input" type="number" min="1" max="10000" placeholder="e.g. 20">
-            <span class="suffix" data-i18n="sett.unit_items">个</span>
-          </div>
-        </div>
-        <div class="field">
-          <label data-i18n="sett.target_site">目标补号网站</label>
-          <span class="field-hint" data-i18n="sett.target_site_hint">image2api 地址，如 https://your.domain 或 http://1.2.3.4:2000</span>
-          <input id="set-replenish-url" class="px-input" type="text" autocomplete="off" spellcheck="false" placeholder="https://your.domain">
-        </div>
-        <div class="field">
-          <label data-i18n="sett.account">账号</label>
-          <span class="field-hint" data-i18n="sett.account_hint">image2api 后台管理员账号（邮箱或用户名）</span>
-          <input id="set-replenish-user" class="px-input" type="text" autocomplete="off" spellcheck="false" placeholder="admin@example.com">
-        </div>
-        <div class="field">
-          <label data-i18n="sett.password">密码</label>
-          <input id="set-replenish-pass" class="px-input" type="password" autocomplete="new-password" placeholder="Password">
-        </div>
-        <label class="switch-row">
-          <input id="set-replenish-autoproduce" type="checkbox">
-          <span class="switch-ui"></span>
-          <span class="switch-label" data-i18n="sett.auto_produce">没现成号时自动生产（并发用上面「最大并发数」，滚动生产、满 5 个推一次）</span>
-        </label>
-        <div class="settings-foot">
-          <button class="px-btn primary" onclick="saveReplenish()" data-i18n="sett.save_replenish">保存补号配置</button>
-        </div>
-      </div>
+  <div id="toast" class="toast" style="display:none"></div>
+  <script src="/static/i18n/zh.js"></script>
+  <script src="/static/i18n/en.js"></script>
+  <script src="/static/i18n/vi.js"></script>
+  <script src="/static/i18n/i18n.js"></script>
+  <script src="/static/layout.js"></script>
+  <script>
+    async function loadSettings() {
+      const r = await api('/api/settings');
+      const d = await r.json();
+      document.getElementById('set-max-concurrency').value = d.max_concurrency || '10';
+      document.getElementById('set-fission-count').value = d.fission_count || '5';
+      document.getElementById('set-proxy-enabled').checked = d.proxy_enabled === '1';
+      document.getElementById('set-proxy-list').value = d.proxy_list || '';
+      updateProxyCount();
 
-      <div class="px-panel settings-card">
-        <div class="settings-head">
-          <span class="settings-icon violet">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="2"/><path d="M6 12h.01M10 12h.01M14 12h4"/></svg>
-          </span>
-          <div>
-            <h2 data-i18n="sett.proxy_config">代理配置</h2>
-            <p data-i18n="sett.proxy_sub">注册时通过代理访问，降低风控</p>
-          </div>
-        </div>
-        <label class="switch-row">
-          <input id="set-proxy-enabled" type="checkbox">
-          <span class="switch-ui"></span>
-          <span class="switch-label" data-i18n="sett.enable_proxy">启用代理</span>
-        </label>
-        <div class="field">
-          <div class="field-label-row">
-            <label data-i18n="sett.proxy_list">代理列表</label>
-            <span id="proxy-count" class="count-badge">0 proxies</span>
-          </div>
-          <span class="field-hint" data-i18n="sett.proxy_hint">每行一个，支持 http(s)://user:pass@host:port、socks5://host:port、host:port:user:pass</span>
-          <textarea id="set-proxy-list" class="px-input proxy-textarea" rows="5" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" oninput="updateProxyCount()" placeholder="http://user:pass@1.2.3.4:8080&#10;socks5://1.2.3.4:1080&#10;1.2.3.4:8080:user:pass"></textarea>
-        </div>
-        <div id="proxy-test-result" class="proxy-result" style="display:none"></div>
-        <div class="settings-foot">
-          <button id="proxy-test-btn" class="px-btn ghost" onclick="testProxy()" data-i18n="sett.test_proxy">测试代理</button>
-          <button class="px-btn primary" onclick="saveProxy()" data-i18n="sett.save_proxy">保存代理</button>
-        </div>
-      </div>
+      document.getElementById('set-email-source').value = d.email_source === 'varymail' ? 'varymail' : 'outlook';
+      document.getElementById('set-varymail-key').value = d.varymail_api_key || '';
+      onSourceChange();
+      if (d.varymail_api_key) checkVarymail(true);
 
-      <div class="px-panel settings-card">
-        <div class="settings-head">
-          <span class="settings-icon amber">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </span>
-          <div>
-            <h2 data-i18n="sett.change_pass">修改密码</h2>
-            <p data-i18n="sett.change_pass_sub">修改后旧登录会立即失效</p>
-          </div>
-        </div>
-        <div class="field">
-          <label data-i18n="sett.old_pass">原密码</label>
-          <input id="pw-old" class="px-input" type="password" autocomplete="current-password">
-        </div>
-        <div class="field">
-          <label data-i18n="sett.new_pass">新密码</label>
-          <span class="field-hint" data-i18n="sett.new_pass_hint">Length > 6</span>
-          <input id="pw-new" class="px-input" type="password" autocomplete="new-password">
-        </div>
-        <div class="field">
-          <label data-i18n="sett.new_pass_confirm">确认新密码</label>
-          <input id="pw-new2" class="px-input" type="password" autocomplete="new-password">
-        </div>
-        <div class="settings-foot">
-          <button class="px-btn primary" onclick="changePassword()" data-i18n="sett.submit_change_pass">修改密码</button>
-        </div>
-      </div>
-    </div>
-  </main>
-</div>
+      document.getElementById('set-replenish-enabled').checked = d.replenish_enabled === '1';
+      document.getElementById('set-replenish-threshold').value = d.replenish_threshold || '';
+      document.getElementById('set-replenish-url').value = d.replenish_target_url || '';
+      document.getElementById('set-replenish-user').value = d.replenish_username || '';
+      document.getElementById('set-replenish-pass').value = d.replenish_password || '';
+      document.getElementById('set-replenish-autoproduce').checked = d.replenish_autoproduce === '1';
+    }
 
-<div id="toast" class="toast" style="display:none"></div>
-<script src="/static/i18n/zh.js"></script>
-<script src="/static/i18n/en.js"></script>
-<script src="/static/i18n/i18n.js"></script>
-<script src="/static/layout.js"></script>
-<script>
-async function loadSettings() {
-  const r = await api('/api/settings');
-  const d = await r.json();
-  document.getElementById('set-max-concurrency').value = d.max_concurrency || '10';
-  document.getElementById('set-fission-count').value = d.fission_count || '5';
-  document.getElementById('set-proxy-enabled').checked = d.proxy_enabled === '1';
-  document.getElementById('set-proxy-list').value = d.proxy_list || '';
-  updateProxyCount();
+    async function saveReplenish() {
+      const enabled = document.getElementById('set-replenish-enabled').checked;
+      const threshold = document.getElementById('set-replenish-threshold').value.trim();
+      const url = document.getElementById('set-replenish-url').value.trim();
+      const user = document.getElementById('set-replenish-user').value.trim();
+      const pass = document.getElementById('set-replenish-pass').value;
+      if (enabled && (!threshold || !url || !user || !pass)) {
+        return toast(window.t ? window.t('common.error', '操作失败') : 'Fill in required fields', true);
+      }
+      const body = {
+        replenish_enabled: enabled ? '1' : '0',
+        replenish_threshold: threshold,
+        replenish_target_url: url,
+        replenish_username: user,
+        replenish_password: pass,
+        replenish_autoproduce: document.getElementById('set-replenish-autoproduce').checked ? '1' : '0',
+      };
+      const r = await api('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
+      toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
+    }
 
-  document.getElementById('set-email-source').value = d.email_source === 'varymail' ? 'varymail' : 'outlook';
-  document.getElementById('set-varymail-key').value = d.varymail_api_key || '';
-  onSourceChange();
-  if (d.varymail_api_key) checkVarymail(true);
+    function onSourceChange() {
+      const v = document.getElementById('set-email-source').value;
+      document.getElementById('varymail-fields').style.display = v === 'varymail' ? '' : 'none';
+    }
 
-  document.getElementById('set-replenish-enabled').checked = d.replenish_enabled === '1';
-  document.getElementById('set-replenish-threshold').value = d.replenish_threshold || '';
-  document.getElementById('set-replenish-url').value = d.replenish_target_url || '';
-  document.getElementById('set-replenish-user').value = d.replenish_username || '';
-  document.getElementById('set-replenish-pass').value = d.replenish_password || '';
-  document.getElementById('set-replenish-autoproduce').checked = d.replenish_autoproduce === '1';
-}
+    async function checkVarymail(silent) {
+      const key = document.getElementById('set-varymail-key').value.trim();
+      const box = document.getElementById('varymail-result');
+      const btn = document.getElementById('varymail-check-btn');
+      if (!key) { if (!silent) toast('Please fill API Key', true); return; }
+      btn.disabled = true;
+      const old = btn.textContent;
+      btn.textContent = 'Checking...';
+      try {
+        const qs = new URLSearchParams({ key });
+        const r = await api('/api/varymail/services?' + qs.toString());
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          box.style.display = 'flex';
+          box.className = 'proxy-result fail';
+          box.textContent = '✗ ' + (d.error || 'Failed');
+          return;
+        }
+        const svc = d.service || {};
+        const usable = svc.stock !== 'out' && (svc.available || 0) > 0;
+        const stockTxt = svc.stock === 'out' ? 'No stock' : (svc.stock || '');
+        document.getElementById('varymail-price').textContent = 'Price: ' + (d.price != null ? d.price : '?');
+        box.style.display = 'flex';
+        box.className = 'proxy-result ' + (usable ? 'ok' : 'fail');
+        box.textContent = (usable ? '✓ ' : '✗ ') + `${svc.name || 'chatgpt'} · Avail: ${svc.available || 0} · ${stockTxt}`;
+      } catch (e) {
+        box.style.display = 'flex';
+        box.className = 'proxy-result fail';
+        box.textContent = '✗ Failed: ' + e;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = old;
+      }
+    }
 
-async function saveReplenish() {
-  const enabled = document.getElementById('set-replenish-enabled').checked;
-  const threshold = document.getElementById('set-replenish-threshold').value.trim();
-  const url = document.getElementById('set-replenish-url').value.trim();
-  const user = document.getElementById('set-replenish-user').value.trim();
-  const pass = document.getElementById('set-replenish-pass').value;
-  if (enabled && (!threshold || !url || !user || !pass)) {
-    return toast(window.t ? window.t('common.error', '操作失败') : 'Fill in required fields', true);
-  }
-  const body = {
-    replenish_enabled: enabled ? '1' : '0',
-    replenish_threshold: threshold,
-    replenish_target_url: url,
-    replenish_username: user,
-    replenish_password: pass,
-    replenish_autoproduce: document.getElementById('set-replenish-autoproduce').checked ? '1' : '0',
-  };
-  const r = await api('/api/settings', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
-  toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
-}
+    async function saveVarymail() {
+      const source = document.getElementById('set-email-source').value;
+      if (source === 'varymail') {
+        if (!document.getElementById('set-varymail-key').value.trim()) return toast('Please fill varymail API Key', true);
+      }
+      const body = {
+        email_source: source,
+        varymail_api_key: document.getElementById('set-varymail-key').value.trim(),
+      };
+      const r = await api('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
+      toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
+    }
 
-function onSourceChange() {
-  const v = document.getElementById('set-email-source').value;
-  document.getElementById('varymail-fields').style.display = v === 'varymail' ? '' : 'none';
-}
+    function proxyLines() {
+      return document.getElementById('set-proxy-list').value
+        .split('\n').map(s => s.trim()).filter(Boolean);
+    }
 
-async function checkVarymail(silent) {
-  const key = document.getElementById('set-varymail-key').value.trim();
-  const box = document.getElementById('varymail-result');
-  const btn = document.getElementById('varymail-check-btn');
-  if (!key) { if (!silent) toast('Please fill API Key', true); return; }
-  btn.disabled = true;
-  const old = btn.textContent;
-  btn.textContent = 'Checking...';
-  try {
-    const qs = new URLSearchParams({ key });
-    const r = await api('/api/varymail/services?' + qs.toString());
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) {
+    function firstProxy() {
+      return proxyLines()[0] || '';
+    }
+
+    function updateProxyCount() {
+      const count = proxyLines().length;
+      const tpl = window.t ? window.t('sett.proxy_count', `Detected ${count} proxies`) : `Detected ${count} proxies`;
+      document.getElementById('proxy-count').textContent = tpl.replace('{n}', count);
+    }
+
+    async function testProxy() {
+      const proxy = firstProxy();
+      const box = document.getElementById('proxy-test-result');
+      const btn = document.getElementById('proxy-test-btn');
+      if (!proxy) { box.style.display = 'none'; return toast('Please fill proxies first', true); }
+      btn.disabled = true;
+      const old = btn.textContent;
+      btn.textContent = 'Testing...';
       box.style.display = 'flex';
-      box.className = 'proxy-result fail';
-      box.textContent = '✗ ' + (d.error || 'Failed');
-      return;
+      box.className = 'proxy-result testing';
+      box.innerHTML = '<span class="spinner"></span> Testing proxy...';
+      try {
+        const r = await api('/api/proxy/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ proxy }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && d.ok) {
+          box.className = 'proxy-result ok';
+          box.innerHTML = '✓ Proxy works · IP <b>' + (d.ip || 'Unknown') + '</b> · ' + (d.ms || 0) + ' ms';
+        } else {
+          box.className = 'proxy-result fail';
+          box.textContent = '✗ Proxy failed: ' + (d.error || 'Connection failed');
+        }
+      } catch (e) {
+        box.className = 'proxy-result fail';
+        box.textContent = '✗ Test failed: ' + e;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = old;
+      }
     }
-    const svc = d.service || {};
-    const usable = svc.stock !== 'out' && (svc.available || 0) > 0;
-    const stockTxt = svc.stock === 'out' ? 'No stock' : (svc.stock || '');
-    document.getElementById('varymail-price').textContent = 'Price: ' + (d.price != null ? d.price : '?');
-    box.style.display = 'flex';
-    box.className = 'proxy-result ' + (usable ? 'ok' : 'fail');
-    box.textContent = (usable ? '✓ ' : '✗ ') + `${svc.name || 'chatgpt'} · Avail: ${svc.available || 0} · ${stockTxt}`;
-  } catch (e) {
-    box.style.display = 'flex';
-    box.className = 'proxy-result fail';
-    box.textContent = '✗ Failed: ' + e;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = old;
-  }
-}
 
-async function saveVarymail() {
-  const source = document.getElementById('set-email-source').value;
-  if (source === 'varymail') {
-    if (!document.getElementById('set-varymail-key').value.trim()) return toast('Please fill varymail API Key', true);
-  }
-  const body = {
-    email_source: source,
-    varymail_api_key: document.getElementById('set-varymail-key').value.trim(),
-  };
-  const r = await api('/api/settings', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
-  toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
-}
+    async function saveProxy() {
+      const body = {
+        proxy_enabled: document.getElementById('set-proxy-enabled').checked ? '1' : '0',
+        proxy_list: document.getElementById('set-proxy-list').value.trim(),
+      };
+      const r = await api('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
+      toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
+    }
 
-function proxyLines() {
-  return document.getElementById('set-proxy-list').value
-    .split('\n').map(s => s.trim()).filter(Boolean);
-}
+    async function saveSettings() {
+      const body = {
+        max_concurrency: document.getElementById('set-max-concurrency').value.trim(),
+        fission_count: document.getElementById('set-fission-count').value.trim(),
+      };
+      const r = await api('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
+      toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
+    }
 
-function firstProxy() {
-  return proxyLines()[0] || '';
-}
+    async function changePassword() {
+      const oldPass = document.getElementById('pw-old').value;
+      const newPass = document.getElementById('pw-new').value;
+      const newPass2 = document.getElementById('pw-new2').value;
+      if (!oldPass) return toast('Please enter current password', true);
+      if (newPass.length <= 6) return toast('New password length must be > 6', true);
+      if (newPass !== newPass2) return toast('Passwords do not match', true);
+      const r = await api('/api/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ old_password: oldPass, new_password: newPass }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return toast(d.error || 'Failed to change password', true);
+      if (d.token) setToken(d.token);
+      document.getElementById('pw-old').value = '';
+      document.getElementById('pw-new').value = '';
+      document.getElementById('pw-new2').value = '';
+      toast(window.t ? window.t('common.success', '密码已修改') : 'Password changed');
+    }
 
-function updateProxyCount() {
-  const count = proxyLines().length;
-  const tpl = window.t ? window.t('sett.proxy_count', `Detected ${count} proxies`) : `Detected ${count} proxies`;
-  document.getElementById('proxy-count').textContent = tpl.replace('{n}', count);
-}
-
-async function testProxy() {
-  const proxy = firstProxy();
-  const box = document.getElementById('proxy-test-result');
-  const btn = document.getElementById('proxy-test-btn');
-  if (!proxy) { box.style.display = 'none'; return toast('Please fill proxies first', true); }
-  btn.disabled = true;
-  const old = btn.textContent;
-  btn.textContent = 'Testing...';
-  box.style.display = 'flex';
-  box.className = 'proxy-result testing';
-  box.innerHTML = '<span class="spinner"></span> Testing proxy...';
-  try {
-    const r = await api('/api/proxy/test', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ proxy }),
+    window.addEventListener('langchanged', () => {
+      updateProxyCount();
     });
-    const d = await r.json().catch(() => ({}));
-    if (r.ok && d.ok) {
-      box.className = 'proxy-result ok';
-      box.innerHTML = '✓ Proxy works · IP <b>' + (d.ip || 'Unknown') + '</b> · ' + (d.ms || 0) + ' ms';
-    } else {
-      box.className = 'proxy-result fail';
-      box.textContent = '✗ Proxy failed: ' + (d.error || 'Connection failed');
-    }
-  } catch (e) {
-    box.className = 'proxy-result fail';
-    box.textContent = '✗ Test failed: ' + e;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = old;
-  }
-}
 
-async function saveProxy() {
-  const body = {
-    proxy_enabled: document.getElementById('set-proxy-enabled').checked ? '1' : '0',
-    proxy_list: document.getElementById('set-proxy-list').value.trim(),
-  };
-  const r = await api('/api/settings', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
-  toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
-}
-
-async function saveSettings() {
-  const body = {
-    max_concurrency: document.getElementById('set-max-concurrency').value.trim(),
-    fission_count: document.getElementById('set-fission-count').value.trim(),
-  };
-  const r = await api('/api/settings', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) return toast(window.t ? window.t('common.error', '保存失败') : 'Save failed', true);
-  toast(window.t ? window.t('common.success', '操作成功') : 'Saved');
-}
-
-async function changePassword() {
-  const oldPass = document.getElementById('pw-old').value;
-  const newPass = document.getElementById('pw-new').value;
-  const newPass2 = document.getElementById('pw-new2').value;
-  if (!oldPass) return toast('Please enter current password', true);
-  if (newPass.length <= 6) return toast('New password length must be > 6', true);
-  if (newPass !== newPass2) return toast('Passwords do not match', true);
-  const r = await api('/api/change-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ old_password: oldPass, new_password: newPass }),
-  });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) return toast(d.error || 'Failed to change password', true);
-  if (d.token) setToken(d.token);
-  document.getElementById('pw-old').value = '';
-  document.getElementById('pw-new').value = '';
-  document.getElementById('pw-new2').value = '';
-  toast(window.t ? window.t('common.success', '密码已修改') : 'Password changed');
-}
-
-window.addEventListener('langchanged', () => {
-  updateProxyCount();
-});
-
-loadSettings();
-</script>
+    loadSettings();
+  </script>
 </body>
+
 </html>

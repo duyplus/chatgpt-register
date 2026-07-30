@@ -6,7 +6,7 @@
   }
 
   function setLang(lang) {
-    if (!['zh', 'en'].includes(lang)) return;
+    if (!['zh', 'en', 'vi'].includes(lang)) return;
     localStorage.setItem(LANG_KEY, lang);
     translateDOM();
     window.dispatchEvent(new CustomEvent('langchanged', { detail: { lang } }));

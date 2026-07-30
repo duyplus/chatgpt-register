@@ -174,6 +174,7 @@ function renderPager(elId, page, maxPage, go) {
     <select class="lang-switcher-select" onchange="window.i18n && window.i18n.setLang(this.value)" style="background:transparent;border:none;color:#f8fafc;font-size:13px;font-weight:500;cursor:pointer;outline:none;">
       <option value="zh" ${currentLang === 'zh' ? 'selected' : ''} style="background:#1e293b;color:#fff;">中文</option>
       <option value="en" ${currentLang === 'en' ? 'selected' : ''} style="background:#1e293b;color:#fff;">English</option>
+      <option value="vi" ${currentLang === 'vi' ? 'selected' : ''} style="background:#1e293b;color:#fff;">Tiếng Việt</option>
     </select>
   `;
   document.body.appendChild(topLangSwitcher);
