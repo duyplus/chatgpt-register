@@ -67,7 +67,7 @@ func probeAlive(token, accountID string) (alive bool, transportErr bool, code in
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 
 	if resp.StatusCode == http.StatusOK {
-		return true, false, resp.StatusCode, "存活"
+		return true, false, resp.StatusCode, "alive"
 	}
 	snippet := strings.TrimSpace(string(body))
 	if len(snippet) > 200 {
@@ -77,9 +77,6 @@ func probeAlive(token, accountID string) (alive bool, transportErr bool, code in
 }
 
 // CheckAlive 对选中账号测活：用各自 access_token 请求 usage_limits。
-// 200 视为存活（若原为"停用"则恢复为已注册）；非 200 视为失效，自动置为"停用"(already_registered)；
-// 传输层错误(网络/超时)判定为"检测异常"，不改状态。
-// 支持单个 :id 路由或请求体 { "ids": [1,2,3] }。
 func (h *Handler) CheckAlive(c *gin.Context) {
 	var ids []uint
 	if idParam := c.Param("id"); idParam != "" {
@@ -100,7 +97,7 @@ func (h *Handler) CheckAlive(c *gin.Context) {
 		ids = in.IDs
 	}
 	if len(ids) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "未选择账号"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No accounts selected"})
 		return
 	}
 
@@ -117,7 +114,7 @@ func (h *Handler) CheckAlive(c *gin.Context) {
 		tok := accessToken(reg.AuthData)
 		if tok == "" {
 			errN++
-			results = append(results, gin.H{"id": reg.ID, "email": reg.Email, "result": "error", "message": "缺少 access_token"})
+			results = append(results, gin.H{"id": reg.ID, "email": reg.Email, "result": "error", "message": "Missing access_token"})
 			continue
 		}
 
@@ -127,7 +124,7 @@ func (h *Handler) CheckAlive(c *gin.Context) {
 			aliveN++
 			// 之前被停用、这次又存活的，恢复为已注册
 			if reg.Status != "registered" {
-				h.appendLog(reg, fmt.Sprintf("✔ 测活存活(HTTP %d)，恢复为已注册", statusCode))
+				h.appendLog(reg, fmt.Sprintf("✔ Alive check passed (HTTP %d), restored status to registered", statusCode))
 				h.DB.Model(reg).Update("status", "registered")
 			}
 			results = append(results, gin.H{"id": reg.ID, "email": reg.Email, "result": "alive", "code": statusCode})
@@ -136,7 +133,7 @@ func (h *Handler) CheckAlive(c *gin.Context) {
 			results = append(results, gin.H{"id": reg.ID, "email": reg.Email, "result": "error", "code": statusCode, "message": msg})
 		default:
 			deadN++
-			h.appendLog(reg, fmt.Sprintf("✗ 测活失败(HTTP %d)，已停用: %s", statusCode, msg))
+			h.appendLog(reg, fmt.Sprintf("✗ Alive check failed (HTTP %d), disabled: %s", statusCode, msg))
 			h.DB.Model(reg).Update("status", "already_registered")
 			results = append(results, gin.H{"id": reg.ID, "email": reg.Email, "result": "dead", "code": statusCode, "message": msg})
 		}

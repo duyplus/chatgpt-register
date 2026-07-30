@@ -31,9 +31,9 @@ const (
 )
 
 var (
-	ErrBadCredentials = errors.New("用户名或密码错误")
-	ErrInvalidToken   = errors.New("token 无效或已过期")
-	ErrWeakPassword   = errors.New("密码长度必须大于 6 位")
+	ErrBadCredentials = errors.New("invalid username or password")
+	ErrInvalidToken   = errors.New("invalid or expired token")
+	ErrWeakPassword   = errors.New("password length must be greater than 6 characters")
 )
 
 type Claims struct {
@@ -201,7 +201,7 @@ func (s *Service) ChangePassword(adminID uint, oldPass, newPass string) (string,
 		return "", ErrBadCredentials
 	}
 	if bcrypt.CompareHashAndPassword([]byte(a.PasswordHash), []byte(oldPass)) != nil {
-		return "", errors.New("原密码错误")
+		return "", errors.New("incorrect current password")
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(newPass), bcrypt.DefaultCost)
 	if err != nil {

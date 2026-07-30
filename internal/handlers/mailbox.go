@@ -166,7 +166,7 @@ func (h *Handler) MailboxImport(c *gin.Context) {
 func (h *Handler) MailboxVerify(c *gin.Context) {
 	var m models.Mailbox
 	if err := h.DB.First(&m, c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "邮箱不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Mailbox not found"})
 		return
 	}
 	if m.Provider == "varymail" {
@@ -203,7 +203,7 @@ func (h *Handler) MailboxVerify(c *gin.Context) {
 func (h *Handler) MailboxUpdate(c *gin.Context) {
 	var m models.Mailbox
 	if err := h.DB.First(&m, c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Mailbox not found"})
 		return
 	}
 	var in mailboxInput
@@ -243,7 +243,7 @@ func (h *Handler) MailboxDelete(c *gin.Context) {
 func (h *Handler) MailboxMessages(c *gin.Context) {
 	var m models.Mailbox
 	if err := h.DB.First(&m, c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "邮箱不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Mailbox not found"})
 		return
 	}
 	if m.Provider == "varymail" {
@@ -271,7 +271,7 @@ func (h *Handler) MailboxMessages(c *gin.Context) {
 func (h *Handler) MailboxMessage(c *gin.Context) {
 	var m models.Mailbox
 	if err := h.DB.First(&m, c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "邮箱不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Mailbox not found"})
 		return
 	}
 	if m.Provider == "varymail" {
@@ -298,7 +298,7 @@ func (h *Handler) MailboxMessage(c *gin.Context) {
 func (h *Handler) varymailMessages(c *gin.Context, m models.Mailbox) {
 	key := h.setting("varymail_api_key")
 	if key == "" || m.PurchaseID <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少 varymail API Key 或取件权 ID", "email": m.Email})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing varymail API Key or purchase ID", "email": m.Email})
 		return
 	}
 	msg, hasMail, err := varymail.New("", key).Code(c.Request.Context(), m.PurchaseID)
@@ -310,7 +310,7 @@ func (h *Handler) varymailMessages(c *gin.Context, m models.Mailbox) {
 	if hasMail {
 		items = append(items, gin.H{
 			"id": msg.ID, "from": msg.From, "from_name": "",
-			"subject": "验证码：" + msg.Code, "received_at": msg.ReceivedAt,
+			"subject": "Code: " + msg.Code, "received_at": msg.ReceivedAt,
 		})
 	}
 	c.JSON(http.StatusOK, gin.H{"email": m.Email, "items": items})
@@ -320,13 +320,13 @@ func (h *Handler) varymailMessages(c *gin.Context, m models.Mailbox) {
 func (h *Handler) varymailMessage(c *gin.Context, m models.Mailbox) {
 	key := h.setting("varymail_api_key")
 	if key == "" || m.PurchaseID <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少 varymail API Key 或取件权 ID", "email": m.Email})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing varymail API Key or purchase ID", "email": m.Email})
 		return
 	}
 	msg, hasMail, err := varymail.New("", key).Code(c.Request.Context(), m.PurchaseID)
 	if err != nil || !hasMail {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "暂无邮件", "email": m.Email})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No mail available", "email": m.Email})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"id": msg.ID, "from": msg.From, "subject": "验证码：" + msg.Code, "text": "验证码：" + msg.Code, "received_at": msg.ReceivedAt})
+	c.JSON(http.StatusOK, gin.H{"id": msg.ID, "from": msg.From, "subject": "Code: " + msg.Code, "text": "Code: " + msg.Code, "received_at": msg.ReceivedAt})
 }

@@ -28,12 +28,12 @@ func (h *Handler) Produce(c *gin.Context) {
 		return
 	}
 	if h.Browser == nil || !h.Browser.Ready() {
-		c.JSON(http.StatusConflict, gin.H{"error": "缺少浏览器，无法生产：浏览器正在下载或下载失败"})
+		c.JSON(http.StatusConflict, gin.H{"error": "Browser missing, cannot produce: browser is downloading or download failed"})
 		return
 	}
 	if h.setting("email_source") == "varymail" {
 		if h.setting("varymail_api_key") == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "已选 varymail 来源，但未配置 API Key，请先到设置里填写"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "varymail selected, but API Key is missing. Please configure it in settings first."})
 			return
 		}
 	}
@@ -86,7 +86,7 @@ func (h *Handler) RegistrationShot(c *gin.Context) {
 		return
 	}
 	if len(reg.Shot) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "暂无异常截图"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "No screenshot available"})
 		return
 	}
 	c.Data(http.StatusOK, "image/png", reg.Shot)
@@ -95,7 +95,7 @@ func (h *Handler) RegistrationShot(c *gin.Context) {
 // SetShipped 禁止手动切换出库状态。
 // 出库状态只能由下载接口自动标记，避免库存状态被人工改乱。
 func (h *Handler) SetShipped(c *gin.Context) {
-	c.JSON(http.StatusForbidden, gin.H{"error": "出库状态已锁定，只能由下载操作自动更新"})
+	c.JSON(http.StatusForbidden, gin.H{"error": "Shipped status is locked; it can only be updated automatically by downloading"})
 }
 
 // Download 导出选中账号的 access_token：纯文本，一行一个；下载即标记出库。
@@ -109,7 +109,7 @@ func (h *Handler) Download(c *gin.Context) {
 		return
 	}
 	if len(in.IDs) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "未选择账号"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No accounts selected"})
 		return
 	}
 
@@ -120,7 +120,7 @@ func (h *Handler) Download(c *gin.Context) {
 		return
 	}
 	if len(regs) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "所选账号没有可下载的已注册数据"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Selected accounts have no downloadable registered data"})
 		return
 	}
 
@@ -133,7 +133,7 @@ func (h *Handler) Download(c *gin.Context) {
 		ids = append(ids, r.ID)
 	}
 	if len(tokens) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "所选账号缺少 access_token"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Selected accounts lack access_token"})
 		return
 	}
 

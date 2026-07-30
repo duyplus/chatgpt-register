@@ -18,7 +18,7 @@ type loginInput struct {
 func (h *Handler) Login(c *gin.Context) {
 	var in loginInput
 	if err := c.ShouldBindJSON(&in); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid parameter"})
 		return
 	}
 	if in.Username == "" {
@@ -37,11 +37,11 @@ type changePasswordInput struct {
 	NewPassword string `json:"new_password" binding:"required"`
 }
 
-// ChangePassword POST /api/change-password → {token}（改密后签发新 token，旧的作废）
+// ChangePassword POST /api/change-password → {token}
 func (h *Handler) ChangePassword(c *gin.Context) {
 	var in changePasswordInput
 	if err := c.ShouldBindJSON(&in); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid parameter"})
 		return
 	}
 	adminID := c.GetUint("admin_id")
@@ -58,7 +58,7 @@ func (h *Handler) AuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		raw := c.GetHeader("Authorization")
 		if !strings.HasPrefix(raw, "Bearer ") {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
 		}
 		tok := strings.TrimPrefix(raw, "Bearer ")

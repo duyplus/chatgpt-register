@@ -27,7 +27,7 @@ func (h *Handler) VarymailServices(c *gin.Context) {
 		key = h.setting("varymail_api_key")
 	}
 	if key == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请先填写 varymail API Key"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Please fill in the varymail API Key first"})
 		return
 	}
 

@@ -169,7 +169,7 @@ func (s *Service) tick(ctx context.Context) {
 		pushed++
 	}
 	if pushed > 0 {
-		log.Printf("补号：目标存活 %d < 阈值 %d，已推送 %d 个账号", alive, threshold, pushed)
+		log.Printf("Replenish: target alive %d < threshold %d, pushed %d accounts", alive, threshold, pushed)
 	}
 }
 
@@ -177,7 +177,7 @@ func (s *Service) tick(ctx context.Context) {
 func (s *Service) settings() map[string]string {
 	var items []models.Setting
 	if err := s.db.Find(&items).Error; err != nil {
-		log.Printf("补号：读取设置失败：%v", err)
+		log.Printf("Replenish: failed to read settings: %v", err)
 		return map[string]string{}
 	}
 	m := make(map[string]string, len(items))
@@ -187,9 +187,7 @@ func (s *Service) settings() map[string]string {
 	return m
 }
 
-// aliveCount 查 image2api 存活的 openai 账号数。account 统计里 openai 含
-// n(总)/ok(正常)/dead(失效)/quota(限额)；存活 = 正常 + 待验证(刚推入的) = n-dead-quota，
-// 这样刚推进去还在 pending 的号也计入，避免 30 秒内重复补。
+// aliveCount 查 image2api 存活的 openai 账号数。
 func (s *Service) aliveCount(ctx context.Context, base, user, pass string) (int, error) {
 	resp, err := s.authedRequest(ctx, base, user, pass, http.MethodGet, "/admin/api/accounts", nil)
 	if err != nil {
@@ -211,7 +209,7 @@ func (s *Service) aliveCount(ctx context.Context, base, user, pass string) (int,
 		} `json:"stats"`
 	}
 	if err := json.Unmarshal(data, &out); err != nil {
-		return 0, fmt.Errorf("解析响应失败：%w", err)
+		return 0, fmt.Errorf("failed to parse response: %w", err)
 	}
 	st := out.Stats.Openai
 	alive := st.N - st.Dead - st.Quota

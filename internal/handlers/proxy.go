@@ -43,12 +43,12 @@ func (h *Handler) ProxyTest(c *gin.Context) {
 	}
 	pu := normalizeProxy(in.Proxy)
 	if pu == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "代理为空"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Proxy is empty"})
 		return
 	}
 	u, err := url.Parse(pu)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"ok": false, "error": "代理格式错误"})
+		c.JSON(http.StatusOK, gin.H{"ok": false, "error": "Invalid proxy format"})
 		return
 	}
 
@@ -73,7 +73,7 @@ func (h *Handler) ProxyTest(c *gin.Context) {
 			transport.Dial = dialer.Dial //nolint:staticcheck
 		}
 	default:
-		c.JSON(http.StatusOK, gin.H{"ok": false, "error": "不支持的代理类型: " + u.Scheme})
+		c.JSON(http.StatusOK, gin.H{"ok": false, "error": "Unsupported proxy type: " + u.Scheme})
 		return
 	}
 

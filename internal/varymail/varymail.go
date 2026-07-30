@@ -23,11 +23,11 @@ const DefaultServiceName = "chatgpt"
 
 // 已知业务错误，供上层区分处理。
 var (
-	ErrUnauthorized = errors.New("varymail: API Key 缺失或无效")
-	ErrNoBalance    = errors.New("varymail: 余额不足，请先充值")
-	ErrOutOfStock   = errors.New("varymail: 该服务暂时无可用邮箱")
-	ErrPickup       = errors.New("varymail: 取件失败，邮箱可能已失效")
-	ErrNoService    = errors.New("varymail: 店铺内未找到 chatgpt 服务")
+	ErrUnauthorized = errors.New("varymail: API Key is missing or invalid")
+	ErrNoBalance    = errors.New("varymail: Insufficient balance, please top up")
+	ErrOutOfStock   = errors.New("varymail: No mailboxes currently available for this service")
+	ErrPickup       = errors.New("varymail: Pickup failed, mailbox may have expired")
+	ErrNoService    = errors.New("varymail: chatgpt service not found in store")
 )
 
 // Client vary.email API 客户端。
