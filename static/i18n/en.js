@@ -166,6 +166,7 @@ window.I18N_DICTS.en = {
   "sett.change_pass_sub": "Previous sessions will expire immediately after password change",
   "sett.old_pass": "Current Password",
   "sett.new_pass": "New Password",
+  "sett.new_pass_hint": "Length must be greater than 6 characters",
   "sett.new_pass_confirm": "Confirm New Password",
   "sett.submit_change_pass": "Change Password",
 

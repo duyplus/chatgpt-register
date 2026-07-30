@@ -166,6 +166,7 @@ window.I18N_DICTS.zh = {
   "sett.change_pass_sub": "修改后旧登录会立即失效",
   "sett.old_pass": "原密码",
   "sett.new_pass": "新密码",
+  "sett.new_pass_hint": "长度需大于 6 位",
   "sett.new_pass_confirm": "确认新密码",
   "sett.submit_change_pass": "确认修改密码",
 
