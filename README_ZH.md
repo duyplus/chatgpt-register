@@ -189,7 +189,7 @@ ADDR=8080 ./chatgpt-register.exe
 - **手动添加**：填写邮箱地址、密码、服务商
 - **批量导入**：点击「批量导入邮箱」，每行一条，格式：
   ```
-  email----password----client_id----refresh_token
+  email|password|refresh_token|client_id
   ```
 
 ---

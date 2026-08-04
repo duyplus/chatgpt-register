@@ -53,7 +53,7 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true, "token": tok})
 }
 
-// AuthRequired 鉴权中间件：校验 Bearer token；若已自动续期，通过 X-New-Token 响应头下发新 token。
+// AuthRequired middleware: validates Bearer token; if renewed, issues new token via X-New-Token response header.
 func (h *Handler) AuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		raw := c.GetHeader("Authorization")

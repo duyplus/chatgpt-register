@@ -12,7 +12,7 @@ func atoiDefault(s string, def int) int {
 	return def
 }
 
-// proxyList 把多行/逗号分隔的代理串拆成切片，去空行。
+// proxyList splits multi-line / comma-separated proxy strings into slice.
 func proxyList(raw string) []string {
 	raw = strings.ReplaceAll(raw, ",", "\n")
 	var out []string
@@ -31,7 +31,7 @@ func truncateStr(s string, n int) string {
 	return s[:n]
 }
 
-// mask 隐去邮箱本地部分中段，避免日志泄露完整地址。
+// mask hides local part of email address to avoid leaking in logs.
 func mask(email string) string {
 	at := strings.Index(email, "@")
 	if at <= 0 {

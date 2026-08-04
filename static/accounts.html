@@ -1,56 +1,58 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="acc.title">账户管理 · ChatGPT 注册管理</title>
+  <title data-i18n="acc.title">Quản lý Tài khoản · ChatGPT Reg Admin</title>
   <link rel="stylesheet" href="/static/style.css?v=13">
 </head>
 
 <body data-page="accounts">
   <div class="layout">
     <main class="main">
-      <h1 class="page-title" data-i18n="acc.title">账户管理</h1>
+      <h1 class="page-title" data-i18n="acc.title">Quản lý Tài khoản</h1>
 
       <!-- 生产进度概览 -->
       <div class="produce-bar" id="produce-bar">
         <div class="produce-stat"><span class="produce-num" id="pd-pending">0</span><span class="produce-lbl"
-            data-i18n="acc.sub_pending">待生产</span></div>
+            data-i18n="acc.sub_pending">Chờ sản xuất</span></div>
         <span class="produce-dot">·</span>
         <div class="produce-stat"><span class="produce-num running" id="pd-running">0</span><span class="produce-lbl"
-            data-i18n="acc.sub_running">在跑</span></div>
+            data-i18n="acc.sub_running">Đang chạy</span></div>
         <span class="produce-dot">·</span>
         <div class="produce-stat"><span class="produce-num ok" id="pd-registered">0</span><span class="produce-lbl"
-            data-i18n="acc.sub_registered">已注册</span></div>
+            data-i18n="acc.sub_registered">Đã đăng ký</span></div>
         <span class="produce-dot">·</span>
         <div class="produce-stat"><span class="produce-num bad" id="pd-failed">0</span><span class="produce-lbl"
-            data-i18n="acc.sub_failed">生产失败</span></div>
+            data-i18n="acc.sub_failed">Thất bại</span></div>
         <div class="produce-actions">
           <button class="px-btn danger" id="pd-stop" style="display:none" onclick="stopProduce()"
-            data-i18n="acc.stop">停止</button>
+            data-i18n="acc.stop">Dừng</button>
         </div>
       </div>
 
       <div class="toolbar">
-        <input id="search" class="px-input search" placeholder="搜索 email / 备注 ..."
+        <input id="search" class="px-input search" placeholder="Tìm email / ghi chú ..."
           data-i18n-ph="acc.search_placeholder">
         <select id="filter-status" class="px-input">
-          <option value="" data-i18n="acc.all_status">全部状态</option>
-          <option value="registering" data-i18n="acc.filter_registering">注册中</option>
-          <option value="registered" data-i18n="acc.filter_registered">已注册</option>
-          <option value="register_failed" data-i18n="acc.filter_failed">注册失败</option>
-          <option value="already_registered" data-i18n="acc.filter_disabled">停用</option>
+          <option value="" data-i18n="acc.all_status">Tất cả trạng thái</option>
+          <option value="registering" data-i18n="acc.filter_registering">Đang đăng ký</option>
+          <option value="logging_in" data-i18n="acc.filter_logging_in">Đang đăng nhập</option>
+          <option value="registered" data-i18n="acc.filter_registered">Đã đăng ký</option>
+          <option value="register_failed" data-i18n="acc.filter_failed">Thất bại</option>
+          <option value="already_registered" data-i18n="acc.filter_disabled">Vô hiệu hóa</option>
         </select>
-        <button class="px-btn primary" id="produce-btn" onclick="openProduceModal()" data-i18n="acc.produce">生产</button>
+        <button class="px-btn primary" id="produce-btn" onclick="openProduceModal()" data-i18n="acc.produce">Sản xuất</button>
       </div>
 
       <div class="batch-bar" id="acc-batch" style="display:none">
-        <span id="acc-batch-count">已选 0 项</span>
-        <button class="px-btn" onclick="checkAliveSelected()" data-i18n="acc.batch_test_alive">批量测活</button>
-        <button class="px-btn" onclick="downloadSelected()" data-i18n="acc.batch_download">批量下载</button>
-        <button class="px-btn danger" onclick="delSelected()" data-i18n="acc.batch_delete">删除所选</button>
-        <button class="px-btn ghost" onclick="clearSelection()" data-i18n="common.cancel">取消</button>
+        <span id="acc-batch-count">Đã chọn 0 mục</span>
+        <button class="px-btn warning" onclick="retrySelected()" data-i18n="acc.batch_retry">Thử lại mục đã chọn</button>
+        <button class="px-btn" onclick="checkAliveSelected()" data-i18n="acc.batch_test_alive">Kiểm tra sống hàng loạt</button>
+        <button class="px-btn" onclick="downloadSelected()" data-i18n="acc.batch_download">Tải về mục đã chọn</button>
+        <button class="px-btn danger" onclick="delSelected()" data-i18n="acc.batch_delete">Xóa mục đã chọn</button>
+        <button class="px-btn ghost" onclick="clearSelection()" data-i18n="common.cancel">Hủy</button>
       </div>
 
       <div class="table-wrap">
@@ -59,11 +61,12 @@
             <tr>
               <th class="col-check"><input type="checkbox" id="acc-check-all" onclick="toggleSelectAll(this.checked)">
               </th>
-              <th data-i18n="acc.col_email">邮箱</th>
-              <th data-i18n="acc.col_created_at">创建时间</th>
-              <th data-i18n="acc.col_status">状态</th>
-              <th data-i18n="acc.col_shipped">出库状态</th>
-              <th data-i18n="acc.col_actions">操作</th>
+              <th data-i18n="acc.col_email">Địa chỉ hòm thư</th>
+              <th data-i18n="acc.col_status">Trạng thái</th>
+              <th data-i18n="acc.col_shipped">Trạng thái xuất kho</th>
+              <th data-i18n="acc.col_created_at">Thời gian tạo</th>
+              <th data-i18n="acc.col_updated_at">Thời gian cập nhật</th>
+              <th data-i18n="acc.col_actions">Thao tác</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -75,29 +78,72 @@
 
   <!-- 生产 modal -->
   <div class="modal-mask" id="produce-modal" style="display:none">
-    <div class="modal px-panel" style="width:420px">
-      <h2 data-i18n="acc.modal_produce_title">生产账号</h2>
-      <div class="import-sub" data-i18n="acc.modal_produce_sub">填写要生产的账号数量，后台会用「母号 + 裂变」自动注册 ChatGPT + Codex 账号。</div>
-      <label class="produce-field">
-        <span data-i18n="acc.produce_qty">生产数量</span>
-        <input id="produce-count" class="px-input" type="number" min="1" value="10">
+    <div class="modal px-panel" style="width:600px">
+      <h2 data-i18n="acc.modal_produce_title">Sản xuất Tài khoản</h2>
+      <div class="import-sub" data-i18n="acc.modal_produce_sub">Hệ thống tự động đăng ký tài khoản ChatGPT + Codex bằng
+        phương pháp Tài khoản gốc + Nhân bản.</div>
+
+      <!-- Mode Selection Tabs -->
+      <div class="mode-tabs" style="display:flex;gap:16px;">
+        <label style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;">
+          <input type="radio" id="pd-mode-auto-radio" name="pd-mode" value="auto" checked
+            onclick="toggleProduceMode('auto')">
+          <div data-i18n="acc.mode_auto">Tự động theo số lượng</div>
+        </label>
+        <label style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;">
+          <input type="radio" id="pd-mode-manual-radio" name="pd-mode" value="manual"
+            onclick="toggleProduceMode('manual')">
+          <div data-i18n="acc.mode_manual">Chọn thủ công</div>
+        </label>
+      </div>
+
+      <!-- Auto Mode View -->
+      <div id="pd-mode-auto-wrap">
+        <label class="produce-field">
+          <div data-i18n="acc.produce_qty">Số lượng sản xuất</div>
+          <input id="produce-count" class="px-input" type="number" min="1" value="10">
+        </label>
+      </div>
+
+      <!-- Manual Mode View -->
+      <div id="pd-mode-manual-wrap" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px;">
+          <input id="pd-mb-search" class="px-input" placeholder="Tìm kiếm hòm thư..."
+            style="width:200px;font-size:12px;padding:4px 8px;" oninput="filterProduceMailboxes()">
+          <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;">
+            <input type="checkbox" id="pd-mb-select-all" onclick="toggleAllProduceMailboxes(this.checked)">
+            <span>Chọn tất cả (<span id="pd-mb-selected-count">0</span>)</span>
+          </label>
+        </div>
+        <div id="pd-mb-list"
+          style="max-height:180px;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px;background:rgba(153,153,153,0.15);">
+          <!-- mailboxes rendered dynamically -->
+        </div>
+      </div>
+
+      <label class="produce-field"
+        style="flex-direction:row;align-items:center;gap:8px;margin:12px 0 16px 0;cursor:pointer">
+        <input id="produce-login-only" type="checkbox" style="width:16px;height:16px;cursor:pointer">
+        <span style="font-size:13px;color:var(--text-1)" data-i18n="acc.login_only_2fa">Tài khoản đã đăng ký (Chỉ đăng
+          nhập & cài 2FA/mật khẩu)</span>
       </label>
+
       <div class="modal-actions">
-        <button class="px-btn" onclick="closeModal('produce-modal')" data-i18n="common.cancel">取消</button>
-        <button class="px-btn primary" onclick="startProduce()" data-i18n="acc.start_produce">开始生产</button>
+        <button class="px-btn" onclick="closeModal('produce-modal')" data-i18n="common.cancel">Hủy</button>
+        <button class="px-btn primary" onclick="startProduce()" data-i18n="acc.start_produce">Bắt đầu sản xuất</button>
       </div>
     </div>
   </div>
 
   <!-- 日志 modal -->
   <div class="modal-mask" id="log-modal" style="display:none">
-    <div class="modal px-panel" style="width:640px">
-      <h2 id="log-title" data-i18n="acc.modal_log_title">执行日志</h2>
+    <div class="modal px-panel" style="width:950px">
+      <h2 id="log-title" data-i18n="acc.modal_log_title">Nhật ký thực thi</h2>
       <pre id="log-body" class="log-body"></pre>
       <div class="modal-actions">
         <button class="px-btn ghost" id="log-shot-btn" style="display:none;margin-right:auto" onclick="viewShot()"
-          data-i18n="acc.error_shot">异常截图</button>
-        <button class="px-btn" onclick="closeLog()" data-i18n="acc.close">关闭</button>
+          data-i18n="acc.error_shot">Ảnh màn hình lỗi</button>
+        <button class="px-btn" onclick="closeLog()" data-i18n="acc.close">Đóng</button>
       </div>
     </div>
   </div>
@@ -105,12 +151,12 @@
   <!-- 异常截图 modal -->
   <div class="modal-mask" id="shot-modal" style="display:none">
     <div class="modal px-panel" style="width:900px;max-width:94vw">
-      <h2 id="shot-title" data-i18n="acc.error_shot">异常截图</h2>
+      <h2 id="shot-title" data-i18n="acc.error_shot">Ảnh màn hình lỗi</h2>
       <div style="max-height:70vh;overflow:auto;background:#000">
-        <img id="shot-img" style="display:block;width:100%" alt="异常截图">
+        <img id="shot-img" style="display:block;width:100%" alt="Ảnh màn hình lỗi">
       </div>
       <div class="modal-actions">
-        <button class="px-btn" onclick="closeShot()" data-i18n="acc.close">关闭</button>
+        <button class="px-btn" onclick="closeShot()" data-i18n="acc.close">Đóng</button>
       </div>
     </div>
   </div>

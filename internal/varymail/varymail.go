@@ -1,6 +1,5 @@
-// Package varymail 封装 vary.email 取件 API：
-// 查询在售服务/库存、购买取件权（分配邮箱）、按取件权拉取最新验证码。
-// 作为 Outlook 本地邮箱之外的另一种"邮箱来源"，供 producer 批量注册使用。
+// Package varymail Wraps vary.email fetch API:
+// Queries services/stock, purchases mailbox, fetches latest verification code by purchase ID.
 package varymail
 
 import (
@@ -15,13 +14,13 @@ import (
 	"time"
 )
 
-// DefaultBaseURL vary.email 开放 API 根地址。
+// DefaultBaseURL vary.email API base URL.
 const DefaultBaseURL = "https://vary.email"
 
-// DefaultServiceName 固定使用的服务名（接收 ChatGPT/OpenAI 验证码）。
+// DefaultServiceName Fixed service name (receives ChatGPT/OpenAI verification code).
 const DefaultServiceName = "chatgpt"
 
-// 已知业务错误，供上层区分处理。
+// Known business errors.
 var (
 	ErrUnauthorized = errors.New("varymail: API Key is missing or invalid")
 	ErrNoBalance    = errors.New("varymail: Insufficient balance, please top up")
@@ -30,14 +29,14 @@ var (
 	ErrNoService    = errors.New("varymail: chatgpt service not found in store")
 )
 
-// Client vary.email API 客户端。
+// Client vary.email API client.
 type Client struct {
 	baseURL string
 	apiKey  string
 	http    *http.Client
 }
 
-// New 创建客户端。baseURL 为空时用默认地址。
+// New Creates client. Uses default URL if baseURL is empty.
 func New(baseURL, apiKey string) *Client {
 	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
 	if baseURL == "" {
@@ -50,16 +49,16 @@ func New(baseURL, apiKey string) *Client {
 	}
 }
 
-// Service 在售服务及其库存。
+// Service On-sale service and stock.
 type Service struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	Logo      string `json:"logo"`
-	Stock     string `json:"stock"`     // ok 充足 / low 少量 / out 无库存
-	Available int    `json:"available"` // 当前可用邮箱数
+	Stock     string `json:"stock"`     // ok / low / out
+	Available int    `json:"available"` // Available mailbox count
 }
 
-// Purchase 一次购买得到的取件权。
+// Purchase Mailbox purchase result.
 type Purchase struct {
 	ID        int    `json:"id"`
 	Email     string `json:"email"`
@@ -68,7 +67,7 @@ type Purchase struct {
 	CreatedAt string `json:"created_at"`
 }
 
-// CodeMsg 取件权下拉取到的最新一封来信。
+// CodeMsg Latest fetched email message.
 type CodeMsg struct {
 	ID         string `json:"id"`
 	From       string `json:"from"`
@@ -82,7 +81,7 @@ type apiEnvelope struct {
 	Data    json.RawMessage `json:"data"`
 }
 
-// do 发起请求并解出 data；处理统一响应包与已知错误码。
+// do Executes request and unmarshals data.
 func (c *Client) do(ctx context.Context, method, path string, body any) (json.RawMessage, error) {
 	if c.apiKey == "" {
 		return nil, ErrUnauthorized
@@ -118,7 +117,7 @@ func (c *Client) do(ctx context.Context, method, path string, body any) (json.Ra
 
 	var env apiEnvelope
 	if err := json.Unmarshal(raw, &env); err != nil {
-		return nil, fmt.Errorf("varymail: 响应解析失败(HTTP %d)", resp.StatusCode)
+		return nil, fmt.Errorf("varymail: failed to parse response (HTTP %d)", resp.StatusCode)
 	}
 	if env.Code != 200 {
 		if e := mapStatus(env.Code); e != nil {
@@ -147,7 +146,7 @@ func mapStatus(code int) error {
 	return nil
 }
 
-// Services 获取在售服务列表及取件单价。
+// Services Fetches list of services and price.
 func (c *Client) Services(ctx context.Context) (items []Service, price float64, err error) {
 	data, err := c.do(ctx, http.MethodGet, "/api/shop/services", nil)
 	if err != nil {
@@ -158,13 +157,12 @@ func (c *Client) Services(ctx context.Context) (items []Service, price float64, 
 		Price float64   `json:"price"`
 	}
 	if err := json.Unmarshal(data, &out); err != nil {
-		return nil, 0, fmt.Errorf("varymail: 服务列表解析失败")
+		return nil, 0, fmt.Errorf("varymail: failed to parse service list")
 	}
 	return out.Items, out.Price, nil
 }
 
-// ServiceByName 在售服务里按名字找一个（大小写不敏感，先精确后包含）。
-// 找不到返回 ErrNoService。price 为取件单价。
+// ServiceByName Finds service by name (case-insensitive).
 func (c *Client) ServiceByName(ctx context.Context, name string) (svc Service, price float64, err error) {
 	items, price, err := c.Services(ctx)
 	if err != nil {
@@ -184,7 +182,7 @@ func (c *Client) ServiceByName(ctx context.Context, name string) (svc Service, p
 	return Service{}, price, ErrNoService
 }
 
-// Buy 按服务 ID 下单，成功返回分配到的邮箱与扣费后余额。
+// Buy Purchases mailbox by service ID.
 func (c *Client) Buy(ctx context.Context, serviceID int) (Purchase, float64, error) {
 	data, err := c.do(ctx, http.MethodPost, "/api/my/purchases", map[string]any{"service_id": serviceID})
 	if err != nil {
@@ -195,13 +193,12 @@ func (c *Client) Buy(ctx context.Context, serviceID int) (Purchase, float64, err
 		Balance float64  `json:"balance"`
 	}
 	if err := json.Unmarshal(data, &out); err != nil {
-		return Purchase{}, 0, fmt.Errorf("varymail: 下单响应解析失败")
+		return Purchase{}, 0, fmt.Errorf("varymail: failed to parse order response")
 	}
 	return out.Item, out.Balance, nil
 }
 
-// Code 按取件权 ID 拉取最新一封来信及提取到的验证码。
-// hasMail=false 表示暂时还没有邮件（data 为空对象）。
+// Code Fetches latest email and verification code by purchase ID.
 func (c *Client) Code(ctx context.Context, purchaseID int) (msg CodeMsg, hasMail bool, err error) {
 	data, err := c.do(ctx, http.MethodGet, fmt.Sprintf("/api/my/purchases/%d/code", purchaseID), nil)
 	if err != nil {
@@ -212,7 +209,7 @@ func (c *Client) Code(ctx context.Context, purchaseID int) (msg CodeMsg, hasMail
 		return CodeMsg{}, false, nil
 	}
 	if err := json.Unmarshal(data, &msg); err != nil {
-		return CodeMsg{}, false, fmt.Errorf("varymail: 验证码响应解析失败")
+		return CodeMsg{}, false, fmt.Errorf("varymail: failed to parse code response")
 	}
 	return msg, true, nil
 }

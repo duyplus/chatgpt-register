@@ -1,4 +1,4 @@
-/* ===== 邮箱管理 ===== */
+/* ===== Mailbox Management ===== */
 let mbPage = 1;
 const size = 20;
 let mbCache = {};
@@ -10,7 +10,7 @@ function getMbStatusText(status) {
     verify_failed: 'mb.status_verify_failed',
     verified: 'mb.status_verified',
   };
-  return window.t ? window.t(keys[status] || status, status) : (status || '');
+  return window.t(keys[status] || status, status || '');
 }
 
 let mbLoading = false;
@@ -29,19 +29,23 @@ async function loadMailboxes() {
     const d = await r.json();
     mbCache = {};
     (d.data || []).forEach(x => (mbCache[x.id] = x));
-    const fetchTitle = window.t ? window.t('mb.fetch_title', '取件') : '取件';
-    const delTitle = window.t ? window.t('acc.batch_delete', '删除') : '删除';
+    const fetchTitle = window.t('mb.fetch_title', 'Fetch Mail');
+    const delTitle = window.t('acc.batch_delete', 'Delete');
     document.getElementById('mb-rows').innerHTML = (d.data || []).map(x => `
       <tr class="${mbSelected.has(x.id) ? 'row-sel' : ''}">
         <td class="col-check"><input type="checkbox" ${mbSelected.has(x.id) ? 'checked' : ''} onclick="toggleSelect(${x.id}, this.checked)"></td>
-        <td>${esc(x.email)}${x.provider === 'varymail' ? ' <span class="badge vary">vary</span>' : ''}</td>
-        <td>${Number(x.register_count || 0)} / ${Number(x.register_limit || 0)}</td>
+        <td>${esc(x.email)}</td>
+        <td><span class="badge ${esc(x.provider || 'outlook')}">${esc(x.provider || 'outlook')}</span></td>
+        <td><span class="badge ${esc(x.status)}" title="${esc(x.note || '')}">${getMbStatusText(x.status)}</span></td>
         <td>${fmtTime(x.created_at)}</td>
-        <td><span class="badge ${esc(x.status)}">${getMbStatusText(x.status)}</span></td>
+        <td>${fmtTime(x.updated_at)}</td>
         <td>
           ${x.status === 'verified' ? `<button class="icon-btn" title="${fetchTitle}" onclick="openMailModal(${x.id})">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
           </button>` : ''}
+          <button class="icon-btn" title="Edit" onclick="editMailbox(${x.id})">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
           <button class="icon-btn danger" title="${delTitle}" onclick="delMailbox(${x.id})">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
           </button>
@@ -55,7 +59,7 @@ async function loadMailboxes() {
   }
 }
 
-/* ===== 多选 ===== */
+/* ===== Batch Selection ===== */
 function toggleSelect(id, checked) {
   if (checked) mbSelected.add(id); else mbSelected.delete(id);
   syncBatchBar();
@@ -76,7 +80,7 @@ function clearSelection() {
 function syncBatchBar() {
   const bar = document.getElementById('mb-batch');
   bar.style.display = mbSelected.size ? 'flex' : 'none';
-  const selTpl = window.t ? window.t('mb.selected', `已选 ${mbSelected.size} 项`) : `已选 ${mbSelected.size} 项`;
+  const selTpl = window.t('mb.selected', `Selected ${mbSelected.size} items`);
   document.getElementById('mb-batch-count').textContent = selTpl.replace('{n}', mbSelected.size);
   const all = document.getElementById('mb-check-all');
   const ids = Object.keys(mbCache).map(Number);
@@ -88,6 +92,12 @@ async function verifySelected() {
   await runVerify([...mbSelected]);
 }
 
+function produceSelectedMailboxes() {
+  const ids = [...mbSelected];
+  if (!ids.length) return;
+  location.href = '/accounts?produce_ids=' + ids.join(',');
+}
+
 async function delSelected() {
   const ids = [...mbSelected];
   if (!ids.length) return;
@@ -96,21 +106,21 @@ async function delSelected() {
     await api('/api/mailboxes/' + id, { method: 'DELETE' });
     mbSelected.delete(id);
   }
-  toast((window.t ? window.t('common.success', '已删除') : 'Deleted ') + ids.length);
+  toast(window.t('common.success', 'Deleted'));
   loadMailboxes();
 }
 
-/* ===== 批量导入 ===== */
+/* ===== Batch Import ===== */
 function openImportModal() {
   document.getElementById('import-text').value = '';
-  const countTpl = window.t ? window.t('mb.import_count', '已识别 0 个邮箱') : 'Identified 0 mailboxes';
+  const countTpl = window.t('mb.import_count', 'Identified 0 mailboxes');
   document.getElementById('import-count').textContent = countTpl.replace('{n}', 0);
   document.getElementById('import-modal').style.display = 'flex';
 }
 
 function updateImportCount() {
   const n = parseImportLines(document.getElementById('import-text').value).length;
-  const countTpl = window.t ? window.t('mb.import_count', `已识别 ${n} 个邮箱`) : `Identified ${n} mailboxes`;
+  const countTpl = window.t('mb.import_count', `Identified ${n} mailboxes`);
   document.getElementById('import-count').textContent = countTpl.replace('{n}', n);
 }
 
@@ -136,14 +146,50 @@ function parseImportLines(text) {
   text.split(/\r?\n/).forEach(line => {
     line = line.trim();
     if (!line) return;
-    const parts = line.split('----').map(p => p.trim());
-    if (parts.length !== 4 || !parts[0].includes('@')) return;
-    items.push({
-      email: parts[0],
-      password: parts[1],
-      client_id: parts[2],
-      refresh_token: parts[3],
-    });
+    let parts = [];
+    if (line.includes('----')) {
+      parts = line.split(/----+/).map(p => p.trim());
+    } else if (line.includes('---')) {
+      parts = line.split(/---+/).map(p => p.trim());
+    } else if (line.includes('--')) {
+      parts = line.split(/--+/).map(p => p.trim());
+    } else if (line.includes('|')) {
+      parts = line.split('|').map(p => p.trim());
+    } else if (line.includes('\t')) {
+      parts = line.split('\t').map(p => p.trim());
+    } else if (line.includes(':')) {
+      parts = line.split(':').map(p => p.trim());
+    } else {
+      parts = line.split(/\s+/).map(p => p.trim());
+    }
+    if (!parts.length || !parts[0].includes('@')) return;
+    const email = parts[0];
+    let password = parts[1] || '';
+    let client_id = '';
+    let refresh_token = '';
+    const isUUID = s => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(s);
+    if (parts.length >= 4) {
+      if (isUUID(parts[3])) {
+        // email|password|refresh_token|client_id
+        client_id = parts[3];
+        refresh_token = parts[2];
+      } else if (isUUID(parts[2])) {
+        // email|password|client_id|refresh_token
+        client_id = parts[2];
+        refresh_token = parts[3];
+      } else {
+        refresh_token = parts[2];
+        client_id = parts[3];
+      }
+    } else if (parts.length === 3) {
+      if (isUUID(parts[2])) {
+        client_id = parts[2];
+      } else {
+        refresh_token = parts[2];
+      }
+    }
+
+    items.push({ email, password, client_id, refresh_token });
   });
   return items;
 }
@@ -166,14 +212,14 @@ async function doImport() {
   if (d.added > 0) verifyAll();
 }
 
-/* ===== 批量验证 ===== */
+/* ===== Batch Verification ===== */
 let verifying = false;
 
 async function verifyAll() {
   if (verifying) return;
   const ids = [];
   let page = 1;
-  for (;;) {
+  for (; ;) {
     const r = await api('/api/mailboxes?' + new URLSearchParams({ page, size: 100 }));
     const d = await r.json().catch(() => ({}));
     const list = d.data || [];
@@ -217,8 +263,22 @@ async function runVerify(ids) {
   loadMailboxes();
 }
 
+async function get2FA(id) {
+  const r = await api('/api/mailboxes/' + id + '/2fa');
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    return toast('2FA Failed: ' + (d.error || 'Could not fetch 2FA code'), true);
+  }
+  if (d.code) {
+    try {
+      await navigator.clipboard.writeText(d.code);
+    } catch (e) { }
+    toast(`🔑 2FA Code: ${d.code} (Copied to clipboard)`);
+  }
+}
+
 function openMailboxModal(data) {
-  const title = data ? ((window.t ? window.t('mb.modal_edit_title', '编辑邮箱') : 'Edit Mailbox') + ' #' + data.id) : (window.t ? window.t('mb.modal_add_title', '新增邮箱') : 'Add Mailbox');
+  const title = data ? (window.t('mb.modal_edit_title', 'Edit Mailbox') + ' #' + data.id) : window.t('mb.modal_add_title', 'Add Mailbox');
   document.getElementById('mb-modal-title').textContent = title;
   document.getElementById('mb-id').value = data ? data.id : '';
   document.getElementById('mb-email').value = data ? data.email : '';
@@ -258,7 +318,7 @@ async function saveMailbox() {
     return toast('Save failed: ' + (e.error || r.status), true);
   }
   closeModal('mb-modal');
-  toast(window.t ? window.t('common.success', 'Saved') : (id ? 'Updated' : 'Added'));
+  toast(window.t('common.success', 'Saved'));
   loadMailboxes();
 }
 
@@ -266,7 +326,7 @@ async function delMailbox(id) {
   if (!confirm('Delete mailbox #' + id + ' ?')) return;
   const r = await api('/api/mailboxes/' + id, { method: 'DELETE' });
   if (!r.ok) return toast('Delete failed', true);
-  toast(window.t ? window.t('common.success', '已删除') : 'Deleted');
+  toast(window.t('common.success', 'Deleted'));
   loadMailboxes();
 }
 
@@ -284,9 +344,9 @@ function openMailModal(id) {
   mailMsgs = [];
   mailSelected = 0;
   mailListSig = '';
-  const loadingTxt = window.t ? window.t('mb.loading', '加载中...') : 'Loading...';
+  const loadingTxt = window.t('mb.loading', 'Loading...');
   document.getElementById('mail-title').textContent = mb.email;
-  document.getElementById('mail-sub').textContent = 'Inbox · Auto refresh 3s';
+  document.getElementById('mail-sub').textContent = window.t('mb.inbox_sub', 'Inbox · Auto refresh 3s');
   document.getElementById('mail-list').innerHTML = `<div class="mail-empty">${loadingTxt}</div>`;
   document.getElementById('mail-meta').innerHTML = '';
   document.getElementById('mail-frame').srcdoc = '';
@@ -345,10 +405,10 @@ function renderMailList() {
   const list = document.getElementById('mail-list');
   if (!mailMsgs.length) {
     mailListSig = '';
-    list.innerHTML = '<div class="mail-empty">No emails yet...</div>';
+    list.innerHTML = `<div class="mail-empty">${esc(window.t('mb.no_emails', 'No emails yet...'))}</div>`;
     return;
   }
-  // 列表内容与选中项都没变时不重绘，避免每 3 秒轮询造成闪烁。
+  // Do not redraw when list content & selection haven't changed to avoid flickering during 3s polling
   const sig = mailSelected + '#' + mailMsgs.map(msgKey).join(',');
   if (sig === mailListSig) return;
   mailListSig = sig;
@@ -366,7 +426,7 @@ function selectMail(i) {
   renderMailDetail();
 }
 
-const mailBodyCache = {};  // 按消息 id 缓存正文，避免每次轮询/切换重复拉取
+const mailBodyCache = {}; // Cache email body by message ID to prevent re-fetching on poll/switch
 
 function renderMailDetail() {
   const m = mailMsgs[mailSelected];
@@ -391,7 +451,7 @@ function renderMailDetail() {
     loadMailBody(m.id);
     return;
   }
-  // 只展示 HTML 模式；iframe 隔离邮件内容
+  // Show HTML content; iframe isolates email content
   const html = body.html || `<pre style="white-space:pre-wrap;font-family:inherit">${esc(body.text)}</pre>`;
   if (frame.dataset.cur !== 'body:' + m.id) {
     frame.dataset.cur = 'body:' + m.id;
@@ -399,8 +459,7 @@ function renderMailDetail() {
   }
 }
 
-// 直接写入 iframe 文档（sandbox 保留 allow-same-origin 但不含 allow-scripts，
-// 因此父页可访问文档、邮件内脚本不会执行）。document.write 比 srcdoc/blob 在各浏览器里最稳。
+// Write directly to iframe document (sandbox preserves allow-same-origin without allow-scripts, so parent page can access doc while email scripts will not execute)
 const FRAME_BASE_CSS = '<style>::-webkit-scrollbar{width:0;height:0}html{scrollbar-width:none}</style>';
 
 function setFrameHTML(frame, html) {
@@ -413,7 +472,7 @@ function setFrameHTML(frame, html) {
       doc.close();
       return;
     }
-  } catch (e) { /* 退回 srcdoc */ }
+  } catch (e) { /* Fallback to srcdoc */ }
   frame.srcdoc = content;
 }
 
@@ -424,12 +483,12 @@ async function loadMailBody(msgId) {
   const d = await r.json().catch(() => ({}));
   if (!r.ok) return;
   mailBodyCache[msgId] = { html: d.html || '', text: d.text || '' };
-  // 若用户仍停留在这封邮件，立即渲染
+  // If user is still viewing this email, render immediately
   const cur = mailMsgs[mailSelected];
   if (boxId === mailMailboxId && cur && cur.id === msgId) renderMailDetail();
 }
 
-/* ===== 表格 3 秒自动刷新（页面隐藏时暂停，避免浪费） ===== */
+/* ===== Table 3-second auto-refresh (paused when tab hidden to save resources) ===== */
 let mbTimer = setInterval(() => {
   if (!document.hidden) loadMailboxes();
 }, 3000);
@@ -439,7 +498,7 @@ document.getElementById('mb-search').addEventListener('keydown', e => {
 });
 document.getElementById('mb-filter').addEventListener('change', () => { mbPage = 1; loadMailboxes(); });
 
-/* 点遮罩关闭取件弹窗时也要停轮询 */
+/* Stop polling when closing mail fetcher modal via backdrop click */
 document.getElementById('mail-modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeMailModal();
 });

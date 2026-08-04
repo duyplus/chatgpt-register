@@ -1,5 +1,5 @@
-// Package mailfetch 通过 Microsoft Graph API 拉取 Outlook 邮箱的收件箱邮件，
-// 用 refresh_token 换 access_token（scope=.default，按刷新令牌已授权的权限换取），供网页“取件”弹窗展示。
+// Package mailfetch fetches inbox emails for Outlook accounts via Microsoft Graph API,
+// exchanging refresh_token for access_token, for displaying in web fetch dialog.
 package mailfetch
 
 import (
@@ -16,26 +16,24 @@ import (
 )
 
 const (
-	tokenURL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
-	// 使用 .default：按 refresh_token 原本已授权的权限换取，避免请求未授权 scope 触发 AADSTS70000。
-	graphScope = "https://graph.microsoft.com/.default"
-	graphBase  = "https://graph.microsoft.com/v1.0"
+	tokenURL  = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+	graphBase = "https://graph.microsoft.com/v1.0"
 )
 
 var (
-	ErrMissingCreds = errors.New("client_id / refresh_token 必填")
-	ErrAuthFailed   = errors.New("邮箱鉴权失败")
+	ErrMissingCreds = errors.New("client_id and refresh_token are required")
+	ErrAuthFailed   = errors.New("mailbox authentication failed")
 	searchFolders   = []string{"Inbox", "JunkEmail"}
 )
 
-// Account 一条邮箱凭据。
+// Account Mailbox credential.
 type Account struct {
 	Email        string
 	ClientID     string
 	RefreshToken string
 }
 
-// Message 一封邮件。列表接口只返回头部（ID/发件人/主题/时间），正文按需单独拉取。
+// Message An email message.
 type Message struct {
 	ID         string    `json:"id"`
 	From       string    `json:"from"`
@@ -51,7 +49,7 @@ type cachedToken struct {
 	expiresAt time.Time
 }
 
-// Client 无状态可全局复用，内部按 refresh_token 缓存 access_token。
+// Client Stateless client for global reuse, caches access_token internally by refresh_token.
 type Client struct {
 	http   *http.Client
 	tokMu  sync.Mutex
@@ -65,8 +63,7 @@ func New() *Client {
 	}
 }
 
-// Verify 校验一条邮箱凭据是否可用：尝试用 refresh_token 换取 access_token。
-// 批量并发验证时微软 token 端点会偶发限流/瞬时错误，这里带指数退避重试，避免误判为失败。
+// Verify Verifies whether a mailbox credential is valid by attempting to exchange refresh_token for access_token.
 func (c *Client) Verify(ctx context.Context, acc Account) error {
 	if acc.ClientID == "" || acc.RefreshToken == "" {
 		return ErrMissingCreds
@@ -88,8 +85,7 @@ func (c *Client) Verify(ctx context.Context, acc Account) error {
 	return err
 }
 
-// ListMessages 拉 Inbox + JunkEmail 最新邮件的头部（不含正文），两个文件夹并发拉取，按时间倒序合并返回。
-// 正文由 GetMessage 按需单独拉取，避免每次列表都传输大量 HTML 拖慢速度。
+// ListMessages Fetches latest message headers from Inbox + JunkEmail concurrently.
 func (c *Client) ListMessages(ctx context.Context, acc Account, limit int) ([]Message, error) {
 	if limit < 1 {
 		limit = 20
@@ -130,7 +126,7 @@ func (c *Client) ListMessages(ctx context.Context, acc Account, limit int) ([]Me
 			ReceivedAt: t,
 		})
 	}
-	// 合并后按时间倒序
+	// Sort descending by time after merge
 	for i := 0; i < len(out); i++ {
 		for j := i + 1; j < len(out); j++ {
 			if out[j].ReceivedAt.After(out[i].ReceivedAt) {
@@ -144,7 +140,7 @@ func (c *Client) ListMessages(ctx context.Context, acc Account, limit int) ([]Me
 	return out, nil
 }
 
-// GetMessage 按消息 ID 拉取单封邮件的完整正文（HTML + 纯文本）。
+// GetMessage Fetches full body (HTML + plain text) of a single email by message ID.
 func (c *Client) GetMessage(ctx context.Context, acc Account, msgID string) (Message, error) {
 	tok, err := c.accessToken(ctx, acc)
 	if err != nil {
@@ -273,7 +269,7 @@ func (c *Client) accessToken(ctx context.Context, acc Account) (string, error) {
 	form.Set("client_id", acc.ClientID)
 	form.Set("refresh_token", acc.RefreshToken)
 	form.Set("grant_type", "refresh_token")
-	form.Set("scope", graphScope)
+	// Do not pass scope: Microsoft OAuth uses granted scopes of refresh_token if scope is omitted.
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, strings.NewReader(form.Encode()))
 	if err != nil {

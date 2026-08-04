@@ -1,7 +1,8 @@
-// Command regtest 用单个指定邮箱跑一遍完整生产流程（代理→GeoIP→ChatGPT注册→读码→Codex身份），
-// 便于端到端验证，不走 producer 的邮箱选择逻辑。凭据从 JSON 文件读取，避免写死。
+// Command regtest runs a complete production flow using a single specified mailbox (Proxy -> GeoIP -> ChatGPT Registration -> Code Fetch -> Codex Identity).
+// Convenient for end-to-end verification without producer mailbox selection logic.
+// Credentials are read from a JSON file.
 //
-//	用法: regtest <config.json>
+//	Usage: regtest <config.json>
 //	config: {"email","client_id","refresh_token","proxy","headless"}
 package main
 
@@ -35,12 +36,12 @@ func main() {
 	}
 	raw, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Println("读取配置失败:", err)
+		fmt.Println("Failed to read config:", err)
 		os.Exit(1)
 	}
 	var c cfg
 	if err := json.Unmarshal(raw, &c); err != nil {
-		fmt.Println("解析配置失败:", err)
+		fmt.Println("Failed to parse config:", err)
 		os.Exit(1)
 	}
 
@@ -86,7 +87,7 @@ func main() {
 				}
 				time.Sleep(5 * time.Second)
 			}
-			return "", fmt.Errorf("超时未收到验证码")
+			return "", fmt.Errorf("timeout waiting for verification code")
 		},
 	}
 

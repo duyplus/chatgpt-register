@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="login.title">登录 · ChatGPT 注册管理</title>
+  <title data-i18n="login.title">Đăng nhập · ChatGPT Reg Admin</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 
@@ -14,26 +14,26 @@
       <div style="position:absolute;top:16px;right:16px;">
         <select class="lang-switcher-select" onchange="window.i18n && window.i18n.setLang(this.value)"
           style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;">
-          <option value="zh" style="background:#1e293b;color:#fff;">中文</option>
-          <option value="en" style="background:#1e293b;color:#fff;">English</option>
           <option value="vi" style="background:#1e293b;color:#fff;">Tiếng Việt</option>
+          <option value="en" style="background:#1e293b;color:#fff;">English</option>
+          <option value="zh" style="background:#1e293b;color:#fff;">中文</option>
         </select>
       </div>
       <div class="login-head">
         <div class="login-logo">C</div>
         <div>
-          <div class="login-title" data-i18n="login.title">ChatGPT 注册管理系统</div>
-          <div class="login-desc" data-i18n="login.desc">请输入访问密码登录</div>
+          <div class="login-title" data-i18n="login.title">Hệ thống Quản lý Đăng ký ChatGPT</div>
+          <div class="login-desc" data-i18n="login.desc">Vui lòng nhập mật khẩu truy cập để đăng nhập</div>
         </div>
       </div>
       <div class="login-form">
-        <label class="login-label" for="lg-pass" data-i18n="login.password">密码</label>
-        <input id="lg-pass" class="px-input login-input" type="password" placeholder="请输入密码"
+        <label class="login-label" for="lg-pass" data-i18n="login.password">Mật khẩu</label>
+        <input id="lg-pass" class="px-input login-input" type="password" placeholder="Nhập mật khẩu"
           data-i18n-ph="login.placeholder" autocomplete="current-password" autofocus>
-        <button class="login-btn" onclick="doLogin()" data-i18n="login.btn">登录</button>
+        <button class="login-btn" onclick="doLogin()" data-i18n="login.btn">Đăng nhập</button>
       </div>
     </div>
-    <div class="login-copyright" data-i18n="login.copyright">Copyright © 2026 ChatGPT 注册管理</div>
+    <div class="login-copyright" data-i18n="login.copyright">Bản quyền © 2026 ChatGPT Reg Admin</div>
   </div>
   <div id="toast" class="toast" style="display:none"></div>
   <script src="/static/i18n/zh.js"></script>
@@ -46,14 +46,14 @@
 
     async function doLogin() {
       const password = document.getElementById('lg-pass').value;
-      if (!password) return toast(window.t ? window.t('login.empty_pass', '请输入密码') : 'Please enter password', true);
+      if (!password) return toast(window.t('login.empty_pass', 'Mật khẩu không được để trống'), true);
       const r = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) return toast(d.error || (window.t ? window.t('login.failed', '登录失败') : 'Login failed'), true);
+      if (!r.ok) return toast(d.error || window.t('login.failed', 'Đăng nhập thất bại'), true);
       setToken(d.token);
       location.href = '/dashboard';
     }

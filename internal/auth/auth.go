@@ -1,10 +1,9 @@
-// Package auth 管理员登录 + JWT 鉴权。
+// Package auth manages admin login and JWT authentication.
 //
-// 设计要点：
-//   - token 唯一：每个管理员同一时刻只有一个有效 token，签发新的立即作废旧的
-//   - token 落库：数据库存当前有效 token；内存缓存优先，进程重启后缓存为空再读库
-//   - 自动续期：token 有效期 24h，签发超过 2h（剩余 <22h）后请求会自动换发新 token，
-//     通过响应头 X-New-Token 下发，旧 token 同时作废
+// Design key points:
+//   - Unique token: Each admin has only one valid token at a time; issuing a new one immediately revokes the old.
+//   - Persistent token: Database stores the current valid token; memory cache takes priority, re-reads DB if empty after restart.
+//   - Auto renewal: Token valid for 24h; after 2h (remaining <22h), requests auto-issue a new token sent via X-New-Token header.
 package auth
 
 import (
@@ -26,14 +25,14 @@ const (
 	TokenTTL       = 24 * time.Hour
 	RenewAfter     = 2 * time.Hour
 	DefaultUser    = "admin"
-	DefaultPass    = "admin123"
-	MinPasswordLen = 7 // 密码长度要求大于 6 位
+	DefaultPass    = "123123"
+	MinPasswordLen = 6
 )
 
 var (
 	ErrBadCredentials = errors.New("invalid username or password")
 	ErrInvalidToken   = errors.New("invalid or expired token")
-	ErrWeakPassword   = errors.New("password length must be greater than 6 characters")
+	ErrWeakPassword   = errors.New("password length must be >= 6 characters")
 )
 
 type Claims struct {
@@ -46,8 +45,8 @@ type cacheEntry struct {
 	issuedAt time.Time
 }
 
-// Service 鉴权服务。tokens 是内存缓存（adminID → 当前有效 token），
-// 重启后缓存为空，Validate 会回读数据库再填缓存。
+// Service authentication service. tokens is in-memory cache (adminID -> valid token).
+// After restart, cache is empty and Validate reads back from DB to populate cache.
 type Service struct {
 	db     *gorm.DB
 	secret []byte
@@ -67,7 +66,7 @@ func New(db *gorm.DB) (*Service, error) {
 	return s, nil
 }
 
-// loadSecret JWT 签名密钥持久化在 settings 表（首启随机生成），重启后 token 仍可验签。
+// loadSecret loads JWT signing secret persisted in settings table (randomly generated on first launch).
 func (s *Service) loadSecret() error {
 	var st models.Setting
 	err := s.db.Where("key = ?", "jwt_secret").First(&st).Error
@@ -87,7 +86,7 @@ func (s *Service) loadSecret() error {
 	return nil
 }
 
-// ensureAdmin 首启创建默认管理员 admin / admin123。
+// ensureAdmin creates default admin account on first start.
 func (s *Service) ensureAdmin() error {
 	var count int64
 	if err := s.db.Model(&models.Admin{}).Count(&count).Error; err != nil {
@@ -103,7 +102,7 @@ func (s *Service) ensureAdmin() error {
 	return s.db.Create(&models.Admin{Username: DefaultUser, PasswordHash: string(hash)}).Error
 }
 
-// Login 校验密码，签发新 token（旧 token 立即作废）。
+// Login validates password and issues a new token (revoking old token).
 func (s *Service) Login(username, password string) (string, *models.Admin, error) {
 	var a models.Admin
 	if err := s.db.Where("username = ?", username).First(&a).Error; err != nil {
@@ -119,7 +118,7 @@ func (s *Service) Login(username, password string) (string, *models.Admin, error
 	return tok, &a, nil
 }
 
-// issueToken 签发新 JWT 并写库 + 写缓存；换掉老的（老 token 之后校验不过）。
+// issueToken issues a new JWT and writes DB + cache.
 func (s *Service) issueToken(a *models.Admin) (string, error) {
 	now := time.Now()
 	jti := make([]byte, 8)
@@ -149,8 +148,8 @@ func (s *Service) issueToken(a *models.Admin) (string, error) {
 	return tok, nil
 }
 
-// Validate 校验 token；命中缓存直接比对，缓存缺失（如重启后）回读数据库。
-// 若 token 签发已超过 2h，自动签发新 token 返回（newToken 非空表示已续期，旧的作废）。
+// Validate validates token; checks cache first, falls back to DB if cache missed.
+// If token issued > 2h, automatically issues new token (newToken non-empty means renewed).
 func (s *Service) Validate(tokenStr string) (admin *models.Admin, newToken string, err error) {
 	var claims Claims
 	t, err := jwt.ParseWithClaims(tokenStr, &claims, func(t *jwt.Token) (any, error) {
@@ -172,14 +171,14 @@ func (s *Service) Validate(tokenStr string) (admin *models.Admin, newToken strin
 		return nil, "", ErrInvalidToken
 	}
 	if !cached {
-		// 重启后缓存丢了：从数据库读回当前有效 token
+		// Cache lost after restart: read back current valid token from database
 		entry = cacheEntry{token: a.Token, issuedAt: a.TokenIssuedAt}
 		s.mu.Lock()
 		s.tokens[a.ID] = entry
 		s.mu.Unlock()
 	}
 	if entry.token == "" || entry.token != tokenStr {
-		return nil, "", ErrInvalidToken // 已被新 token 顶掉
+		return nil, "", ErrInvalidToken // Overwritten by new token
 	}
 
 	if time.Since(entry.issuedAt) > RenewAfter {
@@ -191,7 +190,7 @@ func (s *Service) Validate(tokenStr string) (admin *models.Admin, newToken strin
 	return &a, newToken, nil
 }
 
-// ChangePassword 修改密码（长度 >6），成功后强制签发新 token（旧的作废）。
+// ChangePassword changes admin password, forcefully issuing a new token upon success.
 func (s *Service) ChangePassword(adminID uint, oldPass, newPass string) (string, error) {
 	if len(strings.TrimSpace(newPass)) < MinPasswordLen {
 		return "", ErrWeakPassword

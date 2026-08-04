@@ -174,7 +174,7 @@ Vào mục **Quản lý Hòm thư**, hỗ trợ 2 hình thức:
 - **Thêm thủ công:** Điền địa chỉ email, mật khẩu và nhà cung cấp.
 - **Nhập hàng loạt:** Nhấn nút "Nhập hòm thư hàng loạt", mỗi dòng một định dạng:
   ```
-  email----password----client_id----refresh_token
+  email|password|refresh_token|client_id
   ```
 
 ### Bước 2: Cấu hình Hệ thống

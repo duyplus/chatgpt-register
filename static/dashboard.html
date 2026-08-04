@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="dash.title">仪表盘 · ChatGPT 注册管理</title>
+  <title data-i18n="dash.title">Bảng điều khiển · ChatGPT Reg Admin</title>
   <link rel="stylesheet" href="/static/style.css?v=13">
 </head>
 
 <body data-page="dashboard">
   <div class="layout">
     <main class="main">
-      <h1 class="page-title" data-i18n="dash.title">仪表盘</h1>
+      <h1 class="page-title" data-i18n="dash.title">Bảng điều khiển</h1>
 
       <!-- 浏览器就绪/下载进度（就绪后自动隐藏） -->
       <div class="browser-banner" id="browser-banner" style="display:none">
         <div class="bb-row">
           <span class="bb-ico" id="bb-ico">⬇</span>
-          <span class="bb-msg" id="bb-msg" data-i18n="dash.checking_browser">正在检查浏览器...</span>
+          <span class="bb-msg" id="bb-msg" data-i18n="dash.checking_browser">Đang kiểm tra trình duyệt...</span>
           <span class="bb-pct" id="bb-pct"></span>
         </div>
         <div class="bb-progress">
@@ -30,42 +30,42 @@
         <div class="stat-box blue">
           <div class="stat-info">
             <div class="stat-num" id="st-total">0</div>
-            <div class="stat-label" data-i18n="dash.st_total">账户总数</div>
+            <div class="stat-label" data-i18n="dash.st_total">Tổng tài khoản</div>
           </div>
           <div class="stat-ico">⬡</div>
         </div>
         <div class="stat-box green">
           <div class="stat-info">
             <div class="stat-num" id="st-registered">0</div>
-            <div class="stat-label" data-i18n="dash.st_registered">已注册</div>
+            <div class="stat-label" data-i18n="dash.st_registered">Đã đăng ký</div>
           </div>
           <div class="stat-ico">✓</div>
         </div>
         <div class="stat-box amber">
           <div class="stat-info">
             <div class="stat-num" id="st-registering">0</div>
-            <div class="stat-label" data-i18n="dash.st_registering">注册中</div>
+            <div class="stat-label" data-i18n="dash.st_registering">Đang đăng ký</div>
           </div>
           <div class="stat-ico">◔</div>
         </div>
         <div class="stat-box red">
           <div class="stat-info">
             <div class="stat-num" id="st-register_failed">0</div>
-            <div class="stat-label" data-i18n="dash.st_failed">注册失败</div>
+            <div class="stat-label" data-i18n="dash.st_failed">Đăng ký thất bại</div>
           </div>
           <div class="stat-ico">✕</div>
         </div>
         <div class="stat-box violet">
           <div class="stat-info">
             <div class="stat-num" id="st-unshipped">0</div>
-            <div class="stat-label" data-i18n="dash.st_stock">可出库库存</div>
+            <div class="stat-label" data-i18n="dash.st_stock">Kho sẵn sàng xuất</div>
           </div>
           <div class="stat-ico">⇪</div>
         </div>
         <div class="stat-box cyan">
           <div class="stat-info">
             <div class="stat-num" id="st-mailbox_verified">0</div>
-            <div class="stat-label" data-i18n="dash.st_mailboxes">可用邮箱</div>
+            <div class="stat-label" data-i18n="dash.st_mailboxes">Hòm thư khả dụng</div>
           </div>
           <div class="stat-ico">✉</div>
         </div>
@@ -74,13 +74,13 @@
       <!-- 生产任务实时进度 -->
       <div class="px-panel dash-produce" id="dash-produce">
         <div class="dash-produce-head">
-          <h2 data-i18n="dash.produce_task">生产任务</h2>
-          <span class="dash-produce-state" id="pp-state" data-i18n="dash.idle">空闲</span>
+          <h2 data-i18n="dash.produce_task">Nhiệm vụ sản xuất</h2>
+          <span class="dash-produce-state" id="pp-state" data-i18n="dash.idle">Rảnh</span>
         </div>
         <div class="dash-produce-body">
           <div class="dp-main">
             <div class="dp-main-num"><b id="pp-registered">0</b><i>/ <span id="pp-target">0</span></i></div>
-            <div class="dp-main-lbl" data-i18n="dash.registered_target">已注册 / 目标</div>
+            <div class="dp-main-lbl" data-i18n="dash.registered_target">Đã đăng ký / Mục tiêu</div>
           </div>
           <div class="dash-progress-wrap">
             <div class="dash-progress">
@@ -89,9 +89,9 @@
             <div class="dash-produce-msg" id="pp-msg"></div>
           </div>
           <div class="dp-pills">
-            <div class="dp-pill amber"><b id="pp-pending">0</b><span data-i18n="dash.pending">待生产</span></div>
-            <div class="dp-pill cyan"><b id="pp-running">0</b><span data-i18n="dash.running">在跑</span></div>
-            <div class="dp-pill red"><b id="pp-failed">0</b><span data-i18n="dash.failed_pill">失败</span></div>
+            <div class="dp-pill amber"><b id="pp-pending">0</b><span data-i18n="dash.pending">Chờ sản xuất</span></div>
+            <div class="dp-pill cyan"><b id="pp-running">0</b><span data-i18n="dash.running">Đang chạy</span></div>
+            <div class="dp-pill red"><b id="pp-failed">0</b><span data-i18n="dash.failed_pill">Thất bại</span></div>
           </div>
         </div>
       </div>
@@ -99,12 +99,12 @@
       <div class="dash-grid">
         <!-- 状态占比环 -->
         <div class="px-panel">
-          <h2 data-i18n="dash.status_ratio">账户状态占比</h2>
+          <h2 data-i18n="dash.status_ratio">Tỷ lệ trạng thái tài khoản</h2>
           <div class="donut-wrap">
             <div class="donut" id="donut">
               <div class="donut-hole">
                 <div class="donut-total" id="donut-total">0</div>
-                <div class="donut-sub" data-i18n="dash.account">账户</div>
+                <div class="donut-sub" data-i18n="dash.account">Tài khoản</div>
               </div>
             </div>
             <div class="donut-legend" id="donut-legend"></div>
@@ -113,39 +113,38 @@
 
         <!-- 近 7 天产量 -->
         <div class="px-panel">
-          <h2 data-i18n="dash.7days">近 7 天产量</h2>
+          <h2 data-i18n="dash.7days">Sản lượng 7 ngày qua</h2>
           <div class="bars" id="trend-bars"></div>
         </div>
 
         <!-- 结构 & 套餐 -->
         <div class="px-panel">
-          <h2 data-i18n="dash.structure">账号结构</h2>
+          <h2 data-i18n="dash.structure">Cấu trúc tài khoản</h2>
           <div class="mini-rows">
-            <div class="mini-row"><span data-i18n="dash.mother">母号</span><b id="mi-mother">0</b></div>
-            <div class="mini-row"><span data-i18n="dash.fission">裂变子号</span><b id="mi-fission">0</b></div>
-            <div class="mini-row"><span data-i18n="dash.shipped">已出库</span><b id="mi-shipped">0</b></div>
-            <div class="mini-row"><span data-i18n="dash.mb_ratio">可用邮箱 / 邮箱总数</span><b><span id="mi-mbv">0</span> /
+            <div class="mini-row"><span data-i18n="dash.shipped">Đã xuất kho</span><b id="mi-shipped">0</b></div>
+            <div class="mini-row"><span data-i18n="dash.mb_ratio">Hòm thư khả dụng / Tổng hòm thư</span><b><span
+                  id="mi-mbv">0</span> /
                 <span id="mi-mb">0</span></b></div>
           </div>
-          <h3 class="mini-title" data-i18n="dash.plan_dist">套餐分布</h3>
+          <h3 class="mini-title" data-i18n="dash.plan_dist">Phân bố gói dịch vụ</h3>
           <div class="mini-rows" id="plan-rows">
-            <div class="mini-empty" data-i18n="dash.no_data">暂无</div>
+            <div class="mini-empty" data-i18n="dash.no_data">Chưa có</div>
           </div>
         </div>
       </div>
 
       <!-- 最近账户 -->
       <div class="px-panel dash-recent">
-        <h2 data-i18n="dash.recent_accounts">最近账户</h2>
+        <h2 data-i18n="dash.recent_accounts">Tài khoản gần đây</h2>
         <table class="px-table">
           <thead>
             <tr>
               <th data-i18n="acc.col_id">ID</th>
               <th>Email</th>
-              <th data-i18n="acc.col_mother">母号</th>
-              <th data-i18n="acc.col_status">状态</th>
-              <th data-i18n="acc.col_shipped">出库</th>
-              <th data-i18n="acc.col_created_at">创建时间</th>
+              <th data-i18n="acc.col_status">Trạng thái</th>
+              <th data-i18n="acc.col_shipped">Xuất kho</th>
+              <th data-i18n="acc.col_created_at">Thời gian tạo</th>
+              <th data-i18n="acc.col_updated_at">Thời gian cập nhật</th>
             </tr>
           </thead>
           <tbody id="dash-rows"></tbody>
@@ -167,7 +166,7 @@
         registered: 'dash.st_registered',
         register_failed: 'dash.st_failed',
       };
-      return window.t ? window.t(keys[status] || status, status) : (status || '');
+      return window.t(keys[status] || status, status || '');
     }
     const STATUS_COLOR = { registered: '#16a34a', registering: '#0891b2', register_failed: '#e11d48', pending: '#d97706' };
 
@@ -184,7 +183,7 @@
       const donut = document.getElementById('donut');
       const legend = document.getElementById('donut-legend');
       set('donut-total', sum);
-      const noDataText = window.t ? window.t('dash.no_data', '暂无数据') : '暂无数据';
+      const noDataText = window.t('dash.no_data', 'Chưa có dữ liệu');
       if (!sum) {
         donut.style.background = 'conic-gradient(#eef0f5 0 100%)';
         legend.innerHTML = `<div class="mini-empty">${noDataText}</div>`;
@@ -204,7 +203,7 @@
 
     function renderTrend(trend) {
       const box = document.getElementById('trend-bars');
-      const noRecordsText = window.t ? window.t('dash.no_records', '暂无产量记录') : '暂无产量记录';
+      const noRecordsText = window.t('dash.no_records', 'Chưa có bản ghi sản lượng');
       if (!trend || !trend.length) { box.innerHTML = `<div class="mini-empty">${noRecordsText}</div>`; return; }
       const max = Math.max(1, ...trend.map(t => t.count));
       box.innerHTML = trend.map(t => {
@@ -216,7 +215,7 @@
 
     function renderProduce(d) {
       const running = d.running;
-      const stateText = running ? (window.t ? window.t('dash.running', '运行中') : '运行中') : (window.t ? window.t('dash.idle', '空闲') : '空闲');
+      const stateText = running ? window.t('dash.running', 'Đang chạy') : window.t('dash.idle', 'Rảnh');
       set('pp-state', stateText);
       document.getElementById('pp-state').className = 'dash-produce-state' + (running ? ' on' : '');
       const target = d.produce_target || 0, done = d.produce_registered || 0;
@@ -232,7 +231,7 @@
     function renderPlans(plans) {
       const box = document.getElementById('plan-rows');
       const keys = Object.keys(plans || {});
-      const noDataText = window.t ? window.t('dash.no_data', '暂无') : '暂无';
+      const noDataText = window.t('dash.no_data', 'Chưa có');
       if (!keys.length) { box.innerHTML = `<div class="mini-empty">${noDataText}</div>`; return; }
       box.innerHTML = keys.map(k => `<div class="mini-row"><span>${esc(k)}</span><b>${plans[k]}</b></div>`).join('');
     }
@@ -241,8 +240,6 @@
       const r = await api('/api/stats');
       const d = await r.json();
       for (const k of ['total', 'registered', 'registering', 'register_failed', 'unshipped', 'mailbox_verified']) set('st-' + k, d[k] || 0);
-      set('mi-mother', d.mother || 0);
-      set('mi-fission', d.fission || 0);
       set('mi-shipped', d.shipped || 0);
       set('mi-mbv', d.mailbox_verified || 0);
       set('mi-mb', d.mailboxes || 0);
@@ -253,19 +250,17 @@
 
       const lr = await api('/api/registrations?page=1&size=8');
       const ld = await lr.json();
-      const motherText = window.t ? window.t('dash.mother', '母号') : '母号';
-      const fissionText = window.t ? window.t('dash.fission', '裂变') : '裂变';
-      const shippedYes = window.t ? window.t('acc.shipped_yes', '已出库') : '已出库';
-      const shippedNo = window.t ? window.t('acc.shipped_no', '未出库') : '未出库';
-      const noDataText = window.t ? window.t('dash.no_data', '暂无数据') : '暂无数据';
+      const shippedYes = window.t('acc.shipped_yes', 'Đã xuất kho');
+      const shippedNo = window.t('acc.shipped_no', 'Chưa xuất kho');
+      const noDataText = window.t('dash.no_data', 'Chưa có dữ liệu');
       document.getElementById('dash-rows').innerHTML = (ld.data || []).map(x => `
     <tr>
       <td>${x.id}</td>
       <td>${esc(x.email)}</td>
-      <td>${x.is_mother ? motherText : fissionText}</td>
       <td><span class="badge ${esc(x.status)}">${getDashStatusText(x.status)}</span></td>
       <td>${x.shipped ? shippedYes : shippedNo}</td>
       <td>${fmtTime(x.created_at)}</td>
+      <td>${fmtTime(x.updated_at)}</td>
     </tr>`).join('') || `<tr><td colspan="6">${noDataText}</td></tr>`;
     }
 
@@ -277,7 +272,7 @@
       banner.style.display = 'block';
       banner.className = 'browser-banner' + (s.phase === 'error' ? ' err' : '');
       document.getElementById('bb-ico').textContent = s.phase === 'error' ? '⚠' : '⬇';
-      document.getElementById('bb-msg').textContent = s.message || (window.t ? window.t('dash.checking_browser', '正在检查浏览器...') : '正在检查浏览器...');
+      document.getElementById('bb-msg').textContent = s.message || window.t('dash.checking_browser', 'Đang kiểm tra trình duyệt...');
       const pct = s.percent || 0;
       document.getElementById('bb-pct').textContent = (s.phase === 'downloading' || s.phase === 'unzip') ? pct + '%' : '';
       document.getElementById('bb-bar').style.width = (s.phase === 'error' ? 100 : pct) + '%';

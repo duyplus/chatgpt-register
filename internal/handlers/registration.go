@@ -3,12 +3,14 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"chatgpt-register/internal/auth"
 	"chatgpt-register/internal/browserboot"
 	"chatgpt-register/internal/mailfetch"
 	"chatgpt-register/internal/models"
 	"chatgpt-register/internal/producer"
+	"chatgpt-register/internal/twofactor"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -30,26 +32,25 @@ func New(db *gorm.DB, authSvc *auth.Service, browser *browserboot.Manager) *Hand
 type registrationInput struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password"`
-	Username string `json:"username"`
 	Status   string `json:"status"`
 	Note     string `json:"note"`
 }
 
 func validStatus(s string) bool {
-	return s == "" || s == "pending" || s == "registering" ||
+	return s == "" || s == "pending" || s == "registering" || s == "logging_in" ||
 		s == "registered" || s == "register_failed" || s == "already_registered"
 }
 
 func (h *Handler) List(c *gin.Context) {
 	var regs []models.Registration
-	q := h.DB.Order("created_at desc, id desc")
+	q := h.DB.Model(&models.Registration{})
 
 	if s := c.Query("status"); s != "" {
 		q = q.Where("status = ?", s)
 	}
 	if kw := c.Query("q"); kw != "" {
 		like := "%" + kw + "%"
-		q = q.Where("email LIKE ? OR username LIKE ? OR note LIKE ?", like, like, like)
+		q = q.Where("email LIKE ? OR note LIKE ?", like, like)
 	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -62,12 +63,15 @@ func (h *Handler) List(c *gin.Context) {
 	}
 
 	var total int64
-	q.Model(&models.Registration{}).Count(&total)
-	if err := q.Offset((page - 1) * size).Limit(size).Find(&regs).Error; err != nil {
+	if err := q.Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	// 列表不返回 auth_data / log（含私钥、体积大），仅在下载/日志接口按需返回
+	if err := q.Order("mailbox_id asc, id asc").Offset((page - 1) * size).Limit(size).Find(&regs).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	// List does not return auth_data / log (contains private keys, large size), returned on-demand in download/log endpoints
 	for i := range regs {
 		regs[i].AuthData = ""
 		regs[i].Log = ""
@@ -81,7 +85,7 @@ func (h *Handler) Get(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
-	// 不在通用接口返回私钥/完整 auth，仅下载接口按需返回
+	// Do not return private keys/full auth in general endpoint, returned on-demand in download endpoint
 	reg.AuthData = ""
 	c.JSON(http.StatusOK, reg)
 }
@@ -99,7 +103,6 @@ func (h *Handler) Create(c *gin.Context) {
 	reg := models.Registration{
 		Email:    in.Email,
 		Password: in.Password,
-		Username: in.Username,
 		Status:   in.Status,
 		Note:     in.Note,
 	}
@@ -130,7 +133,6 @@ func (h *Handler) Update(c *gin.Context) {
 	}
 	reg.Email = in.Email
 	reg.Password = in.Password
-	reg.Username = in.Username
 	if in.Status != "" {
 		reg.Status = in.Status
 	}
@@ -167,20 +169,18 @@ func (h *Handler) Stats(c *gin.Context) {
 	registered := reg("status = ?", "registered")
 	registerFailed := reg("status = ?", "register_failed")
 	shipped := reg("shipped = ?", true)
-	mother := reg("is_mother = ?", true)
-	fission := reg("is_mother = ?", false)
 
 	var mailboxes, mailboxVerified int64
 	h.DB.Model(&models.Mailbox{}).Count(&mailboxes)
 	h.DB.Model(&models.Mailbox{}).Where("status = ?", "verified").Count(&mailboxVerified)
 
-	// 已注册但未出库（可下载库存）
+	// Registered but unshipped stock
 	unshipped := registered - shipped
 	if unshipped < 0 {
 		unshipped = 0
 	}
 
-	// 套餐分布
+	// Plan type distribution
 	type kv struct {
 		PlanType string
 		N        int64
@@ -195,7 +195,7 @@ func (h *Handler) Stats(c *gin.Context) {
 		planBreak[p.PlanType] = p.N
 	}
 
-	// 近 7 天已注册产量趋势
+	// Past 7 days registered yield trend
 	type day struct {
 		D string
 		N int64
@@ -215,7 +215,6 @@ func (h *Handler) Stats(c *gin.Context) {
 		"total": total, "pending": pending, "registering": registering,
 		"registered": registered, "register_failed": registerFailed,
 		"shipped": shipped, "unshipped": unshipped,
-		"mother": mother, "fission": fission,
 		"mailboxes": mailboxes, "mailbox_verified": mailboxVerified,
 		"plans": planBreak, "trend": trend,
 		"running": prog.Running, "produce_target": prog.Target,
@@ -223,4 +222,28 @@ func (h *Handler) Stats(c *gin.Context) {
 		"produce_registered": prog.Registered, "produce_failed": prog.Failed,
 		"produce_message": prog.Message,
 	})
+}
+
+// RegistrationTwoFactorCode Fetches 2FA code for a registration account using 2fa.live
+func (h *Handler) RegistrationTwoFactorCode(c *gin.Context) {
+	secret := strings.TrimSpace(c.Query("secret"))
+	if secret == "" {
+		id := c.Param("id")
+		if id != "" {
+			var r models.Registration
+			if err := h.DB.First(&r, id).Error; err == nil {
+				secret = r.TwoFactorSecret
+			}
+		}
+	}
+	if secret == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No 2FA secret provided"})
+		return
+	}
+	code, err := twofactor.GetCode(c.Request.Context(), secret)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": code, "secret": twofactor.CleanSecret(secret)})
 }

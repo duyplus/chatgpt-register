@@ -174,7 +174,7 @@ Go to **Mailbox Management**, supports two import methods:
 - **Single Add:** Fill in email, password, and provider.
 - **Batch Import:** Click "Batch Import Mailboxes", format per line:
   ```
-  email----password----client_id----refresh_token
+  email|password|refresh_token|client_id
   ```
 
 ### Step 2: Configure System Settings

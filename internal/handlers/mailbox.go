@@ -9,6 +9,7 @@ import (
 	"chatgpt-register/internal/emailalias"
 	"chatgpt-register/internal/mailfetch"
 	"chatgpt-register/internal/models"
+	"chatgpt-register/internal/twofactor"
 	"chatgpt-register/internal/varymail"
 
 	"github.com/gin-gonic/gin"
@@ -17,9 +18,9 @@ import (
 type mailboxInput struct {
 	Email        string `json:"email" binding:"required"`
 	Password     string `json:"password"`
-	Provider     string `json:"provider"`
 	ClientID     string `json:"client_id"`
 	RefreshToken string `json:"refresh_token"`
+	Provider     string `json:"provider"`
 	Status       string `json:"status"`
 	Note         string `json:"note"`
 }
@@ -37,7 +38,7 @@ func validMailboxStatus(s string) bool {
 
 func (h *Handler) MailboxList(c *gin.Context) {
 	var items []models.Mailbox
-	q := h.DB.Order("id desc")
+	q := h.DB.Order("id asc")
 	if s := c.Query("status"); s != "" {
 		q = q.Where("status = ?", s)
 	}
@@ -50,8 +51,10 @@ func (h *Handler) MailboxList(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-	if size < 1 || size > 100 {
+	if size < 1 {
 		size = 20
+	} else if size > 10000 {
+		size = 10000
 	}
 	var total int64
 	q.Model(&models.Mailbox{}).Count(&total)
@@ -59,7 +62,7 @@ func (h *Handler) MailboxList(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	registerLimit := 1 + h.fissionCount()
+	registerLimit := 1
 	for i := range items {
 		items[i].RegisterCount = h.mailboxRegisterCount(items[i])
 		items[i].RegisterLimit = registerLimit
@@ -67,26 +70,14 @@ func (h *Handler) MailboxList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items, "total": total, "page": page, "size": size})
 }
 
-func (h *Handler) fissionCount() int {
-	var s models.Setting
-	if err := h.DB.Where("key = ?", "fission_count").First(&s).Error; err != nil {
-		return 5
-	}
-	n, err := strconv.Atoi(strings.TrimSpace(s.Value))
-	if err != nil || n < 0 {
-		return 5
-	}
-	return n
-}
-
 func (h *Handler) mailboxRegisterCount(m models.Mailbox) int {
 	var n int64
-	// 归属该邮箱的记录：本身地址、mailbox_id 或别名（母号 + 裂变子号）
+	// Records belonging to this mailbox: direct address or mailbox_id (including legacy alias entries)
 	match := h.DB.Where("mailbox_id = ? OR email = ?", m.ID, m.Email)
 	if pattern := emailalias.LikePattern(m.Email); pattern != "" {
 		match = match.Or("email LIKE ? ESCAPE '\\'", pattern)
 	}
-	// 只统计已占用名额的记录（成功注册 / 停用），pending / 失败可重试不计入
+	// Only count records that occupy quota (registered / already_registered), pending / failed are excluded
 	h.DB.Model(&models.Registration{}).
 		Where(match).
 		Where("status IN ?", []string{"registered", "already_registered"}).
@@ -104,7 +95,15 @@ func (h *Handler) MailboxCreate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid status"})
 		return
 	}
-	m := models.Mailbox{Email: in.Email, Password: in.Password, Provider: in.Provider, ClientID: in.ClientID, RefreshToken: in.RefreshToken, Status: in.Status, Note: in.Note}
+	m := models.Mailbox{
+		Email:        in.Email,
+		Password:     in.Password,
+		Provider:     in.Provider,
+		ClientID:     in.ClientID,
+		RefreshToken: in.RefreshToken,
+		Status:       in.Status,
+		Note:         in.Note,
+	}
 	if m.Status == "" {
 		m.Status = "unverified"
 	}
@@ -122,7 +121,7 @@ type mailboxImportItem struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-// MailboxImport 批量导入邮箱，重复 email 自动跳过。
+// MailboxImport Batch imports mailboxes, duplicate emails are skipped.
 func (h *Handler) MailboxImport(c *gin.Context) {
 	var in struct {
 		Items []mailboxImportItem `json:"items" binding:"required"`
@@ -162,7 +161,7 @@ func (h *Handler) MailboxImport(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"added": added, "skipped": skipped})
 }
 
-// MailboxVerify 校验单个邮箱凭据是否可用，更新状态为 verified / verify_failed。
+// MailboxVerify Validates single mailbox credential, updating status to verified / verify_failed.
 func (h *Handler) MailboxVerify(c *gin.Context) {
 	var m models.Mailbox
 	if err := h.DB.First(&m, c.Param("id")).Error; err != nil {
@@ -170,7 +169,6 @@ func (h *Handler) MailboxVerify(c *gin.Context) {
 		return
 	}
 	if m.Provider == "varymail" {
-		// varymail 邮箱验证取件权是否仍有效
 		var err error
 		if key := h.setting("varymail_api_key"); key == "" || m.PurchaseID <= 0 {
 			err = varymail.ErrUnauthorized
@@ -193,11 +191,38 @@ func (h *Handler) MailboxVerify(c *gin.Context) {
 	})
 	if err != nil {
 		m.Status = "verify_failed"
-	} else {
-		m.Status = "verified"
+		m.Note = err.Error()
+		h.DB.Model(&m).Updates(map[string]any{"status": m.Status, "note": m.Note})
+		c.JSON(http.StatusOK, gin.H{"id": m.ID, "status": m.Status, "error": err.Error()})
+		return
 	}
-	h.DB.Model(&m).Update("status", m.Status)
+	m.Status = "verified"
+	h.DB.Model(&m).Updates(map[string]any{"status": m.Status, "note": ""})
 	c.JSON(http.StatusOK, gin.H{"id": m.ID, "status": m.Status})
+}
+
+// MailboxTwoFactorCode Fetches 2FA code for a registration account or custom secret using https://2fa.live/
+func (h *Handler) MailboxTwoFactorCode(c *gin.Context) {
+	secret := strings.TrimSpace(c.Query("secret"))
+	if secret == "" {
+		id := c.Param("id")
+		if id != "" {
+			var r models.Registration
+			if err := h.DB.First(&r, id).Error; err == nil {
+				secret = r.TwoFactorSecret
+			}
+		}
+	}
+	if secret == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No 2FA secret provided"})
+		return
+	}
+	code, err := twofactor.GetCode(c.Request.Context(), secret)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": code, "secret": twofactor.CleanSecret(secret)})
 }
 
 func (h *Handler) MailboxUpdate(c *gin.Context) {
@@ -239,7 +264,7 @@ func (h *Handler) MailboxDelete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-// MailboxMessages 取件：拉某个邮箱收件箱最新邮件，含完整 HTML 正文，供网页弹窗轮询展示。
+// MailboxMessages Fetch latest inbox messages for mailbox.
 func (h *Handler) MailboxMessages(c *gin.Context) {
 	var m models.Mailbox
 	if err := h.DB.First(&m, c.Param("id")).Error; err != nil {
@@ -267,7 +292,7 @@ func (h *Handler) MailboxMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"email": m.Email, "items": msgs})
 }
 
-// MailboxMessage 按消息 ID 拉取单封邮件的完整正文，供点击后按需加载。
+// MailboxMessage Fetch full content of a single email message by ID.
 func (h *Handler) MailboxMessage(c *gin.Context) {
 	var m models.Mailbox
 	if err := h.DB.First(&m, c.Param("id")).Error; err != nil {
@@ -294,7 +319,7 @@ func (h *Handler) MailboxMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, msg)
 }
 
-// varymailMessages 用取件权拉取 varymail 邮箱最新一封来信（vary.email 只提供最新一封）。
+// varymailMessages Fetch latest email via varymail purchase ID.
 func (h *Handler) varymailMessages(c *gin.Context, m models.Mailbox) {
 	key := h.setting("varymail_api_key")
 	if key == "" || m.PurchaseID <= 0 {
@@ -316,7 +341,7 @@ func (h *Handler) varymailMessages(c *gin.Context, m models.Mailbox) {
 	c.JSON(http.StatusOK, gin.H{"email": m.Email, "items": items})
 }
 
-// varymailMessage varymail 只有验证码，正文直接返回验证码文本。
+// varymailMessage varymail only has verification codes, returns code text as body.
 func (h *Handler) varymailMessage(c *gin.Context, m models.Mailbox) {
 	key := h.setting("varymail_api_key")
 	if key == "" || m.PurchaseID <= 0 {

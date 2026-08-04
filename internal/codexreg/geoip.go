@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,9 +14,15 @@ import (
 	"github.com/go-rod/rod/lib/proto"
 )
 
-// normalizeProxy 把 host:port:user:pass 之类的写法转成标准 URL；带 scheme 的原样返回。
+func isPortStr(s string) bool {
+	p, err := strconv.Atoi(strings.TrimSpace(s))
+	return err == nil && p > 0 && p <= 65535
+}
+
+// normalizeProxy converts formats like ip:port, host:port:user:pass, user:pass:host:port to standard URL; returns as-is if scheme exists.
 func normalizeProxy(raw string) string {
 	raw = strings.TrimSpace(raw)
+	raw = strings.Trim(raw, `"'`)
 	if raw == "" {
 		return ""
 	}
@@ -24,24 +31,29 @@ func normalizeProxy(raw string) string {
 	}
 	parts := strings.Split(raw, ":")
 	switch len(parts) {
-	case 2: // host:port
+	case 2: // ip:port or host:port
 		return "http://" + parts[0] + ":" + parts[1]
-	case 4: // host:port:user:pass
+	case 4: // host:port:user:pass or user:pass:host:port
+		if isPortStr(parts[1]) {
+			return "http://" + url.QueryEscape(parts[2]) + ":" + url.QueryEscape(parts[3]) + "@" + parts[0] + ":" + parts[1]
+		} else if isPortStr(parts[3]) {
+			return "http://" + url.QueryEscape(parts[0]) + ":" + url.QueryEscape(parts[1]) + "@" + parts[2] + ":" + parts[3]
+		}
 		return "http://" + url.QueryEscape(parts[2]) + ":" + url.QueryEscape(parts[3]) + "@" + parts[0] + ":" + parts[1]
 	default:
 		return "http://" + raw
 	}
 }
 
-// parseProxy 解析代理串，返回 Chrome --proxy-server 用的 scheme://host:port（不含账号密码）
-// 以及单独的账号密码（交给 browser.MustHandleAuth 处理）。
+// parseProxy parses proxy string into scheme://host:port for Chrome --proxy-server (without user/pass)
+// and separate username/password for browser.HandleAuth.
 func parseProxy(raw string) (server, user, pass string, err error) {
 	u, err := url.Parse(normalizeProxy(raw))
 	if err != nil {
 		return "", "", "", err
 	}
 	if u.Host == "" {
-		return "", "", "", fmt.Errorf("代理缺少 host: %s", raw)
+		return "", "", "", fmt.Errorf("proxy missing host: %s", raw)
 	}
 	scheme := u.Scheme
 	if scheme == "" {
@@ -55,7 +67,7 @@ func parseProxy(raw string) (server, user, pass string, err error) {
 	return server, user, pass, nil
 }
 
-// geoInfo 是 ip-api.com 的地理定位结果。
+// geoInfo geolocation result from ip-api.com.
 type geoInfo struct {
 	Status      string  `json:"status"`
 	Country     string  `json:"country"`
@@ -68,16 +80,15 @@ type geoInfo struct {
 	Query       string  `json:"query"`
 }
 
-// lookupGeoIPViaRequest 直接发起 HTTP 请求（经由代理出口）查询当前出口 IP 的地理位置，
-// 不占用浏览器页面，从而可在创建页面前拿到地理信息、一次性注入一致指纹。
+// lookupGeoIPViaRequest sends HTTP request via proxy to query exit IP geolocation.
 func lookupGeoIPViaRequest(in Input) *geoInfo {
-	in.logf("🌍 正在通过代理查询出口 IP 地理位置...")
+	in.logf("🌐 Querying exit IP geolocation via proxy...")
 
 	transport := &http.Transport{}
 	if strings.TrimSpace(in.Proxy) != "" {
 		pu, perr := url.Parse(normalizeProxy(in.Proxy))
 		if perr != nil {
-			in.logf("⚠️ 代理解析失败，跳过地理位置对齐: %v", perr)
+			in.logf("⚠️ Proxy parsing failed, skipping geolocation alignment: %v", perr)
 			return nil
 		}
 		transport.Proxy = http.ProxyURL(pu)
@@ -87,17 +98,16 @@ func lookupGeoIPViaRequest(in Input) *geoInfo {
 	req, err := http.NewRequest(http.MethodGet,
 		"http://ip-api.com/json/?fields=status,message,country,countryCode,region,city,timezone,lat,lon,query", nil)
 	if err != nil {
-		in.logf("⚠️ GeoIP 查询失败，跳过地理位置对齐: %v", err)
+		in.logf("⚠️ GeoIP query failed, skipping geolocation alignment: %v", err)
 		return nil
 	}
-	// 带上与浏览器一致的 UA/语言，避免被 ip-api 以空 UA 拒绝
 	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		in.logf("⚠️ GeoIP 查询失败，跳过地理位置对齐: %v", err)
+		in.logf("⚠️ GeoIP query failed, skipping geolocation alignment: %v", err)
 		return nil
 	}
 	defer resp.Body.Close()
@@ -109,15 +119,15 @@ func lookupGeoIPViaRequest(in Input) *geoInfo {
 		if len(snippet) > 200 {
 			snippet = snippet[:200]
 		}
-		in.logf("⚠️ GeoIP 查询失败，跳过地理位置对齐 (HTTP %d, resp=%q)", resp.StatusCode, snippet)
+		in.logf("⚠️ GeoIP query failed, skipping geolocation alignment (HTTP %d, resp=%q)", resp.StatusCode, snippet)
 		return nil
 	}
-	in.logf("📍 出口 IP=%s 位置=%s/%s 时区=%s (%.4f, %.4f)",
+	in.logf("📍 Exit IP=%s Location=%s/%s Timezone=%s (%.4f, %.4f)",
 		g.Query, g.CountryCode, g.City, g.Timezone, g.Lat, g.Lon)
 	return &g
 }
 
-// applyGeo 把地理信息映射到浏览器：时区、经纬度、locale、Accept-Language。
+// applyGeo maps geolocation into browser: timezone, coordinates, locale, Accept-Language.
 func applyGeo(page *rod.Page, g *geoInfo, in Input) {
 	if g.Timezone != "" {
 		_ = (proto.EmulationSetTimezoneOverride{TimezoneID: g.Timezone}).Call(page)
@@ -127,11 +137,10 @@ func applyGeo(page *rod.Page, g *geoInfo, in Input) {
 
 	locale, acceptLang := localeForCountry(g.CountryCode)
 	_ = (proto.EmulationSetLocaleOverride{Locale: locale}).Call(page)
-	// UA/AcceptLanguage 已在创建页面时按地理信息一次性注入，这里不再重复设置。
-	in.logf("✅ 已对齐时区/坐标/语言: tz=%s locale=%s lang=%s", g.Timezone, locale, acceptLang)
+	in.logf("✅ Aligned timezone/coordinates/language: tz=%s locale=%s lang=%s", g.Timezone, locale, acceptLang)
 }
 
-// localeForCountry 按国家码给出 ICU locale 与 Accept-Language，未知国家回退 en-US。
+// localeForCountry maps country code to ICU locale and Accept-Language, defaults to en-US.
 func localeForCountry(cc string) (locale, acceptLang string) {
 	switch strings.ToUpper(strings.TrimSpace(cc)) {
 	case "US":
@@ -169,7 +178,7 @@ func localeForCountry(cc string) (locale, acceptLang string) {
 	}
 }
 
-// blockResources 拦截并放弃图片/字体/媒体请求，降低带宽占用与被检测面。
+// blockResources blocks image/font/media requests to reduce bandwidth and detection footprint.
 func blockResources(page *rod.Page, in Input) func() {
 	router := page.HijackRequests()
 	router.MustAdd("*", func(ctx *rod.Hijack) {
@@ -183,6 +192,6 @@ func blockResources(page *rod.Page, in Input) func() {
 		}
 	})
 	go router.Run()
-	in.logf("🚫 已开启资源屏蔽: image/media/font")
+	in.logf("🚫 Enabled resource blocking: image/media/font")
 	return router.MustStop
 }

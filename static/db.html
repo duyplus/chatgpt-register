@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="nav.db">Quản lý DB · ChatGPT Reg Admin</title>
+  <link rel="stylesheet" href="/static/style.css?v=13">
+  <style>
+    .db-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 10px;
+    }
+
+    .db-tab {
+      padding: 8px 16px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: #94a3b8;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .db-tab:hover {
+      background: rgba(51, 65, 85, 0.8);
+      color: #fff;
+    }
+
+    .db-tab.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .cell-truncate {
+      max-width: 260px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .form-group.full {
+      grid-column: span 2;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+    }
+
+    .modal-foot{
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body data-page="db">
+  <div class="layout">
+    <main class="main">
+      <h1 class="page-title" data-i18n="db.title">Quản lý CSDL</h1>
+
+      <div class="db-tabs" id="db-tabs">
+        <!-- Dynamic Table Tabs -->
+      </div>
+
+      <div class="toolbar">
+        <input id="db-search" class="px-input search" placeholder="Tìm kiếm bản ghi..." data-i18n-ph="db.search_ph" oninput="debounceSearch()">
+        <button class="px-btn primary" onclick="openCreateModal()" data-i18n="db.add_record">+ Thêm bản ghi mới</button>
+        <button class="px-btn danger" onclick="confirmTruncateTable()" data-i18n="db.truncate">🔥 Xóa sạch bảng</button>
+        <button class="px-btn ghost" onclick="backupDB()" data-i18n="db.backup">💾 Sao lưu DB</button>
+        <button class="px-btn ghost" onclick="triggerRestoreDB()" data-i18n="db.restore">📥 Phục hồi DB</button>
+        <input type="file" id="restore-file-input" style="display:none" accept=".db,.sqlite,.sqlite3" onchange="handleRestoreFile(event)">
+      </div>
+
+      <div class="table-wrap">
+        <table class="px-table">
+          <thead id="db-thead">
+            <!-- Dynamic Headers -->
+          </thead>
+          <tbody id="db-tbody">
+            <!-- Dynamic Rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination" id="db-pager"></div>
+    </main>
+  </div>
+
+  <!-- Create / Edit Record Modal -->
+  <div class="modal-mask" id="record-modal" style="display:none">
+    <div class="modal px-panel" style="max-width: 600px;">
+      <h3 id="modal-title" data-i18n="db.edit_record">Chỉnh sửa bản ghi</h3>
+      <form id="record-form" onsubmit="saveRecord(event)">
+        <div class="form-grid" id="modal-form-fields">
+          <!-- Dynamic Form Inputs -->
+        </div>
+        <div class="modal-foot">
+          <button type="submit" class="px-btn primary" data-i18n="common.save">Lưu lại</button>
+          <button type="button" class="px-btn ghost" onclick="closeModal('record-modal')" data-i18n="common.cancel">Hủy</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" style="display:none"></div>
+
+  <script src="/static/i18n/i18n.js?v=2"></script>
+  <script src="/static/i18n/vi.js?v=2"></script>
+  <script src="/static/i18n/en.js?v=2"></script>
+  <script src="/static/i18n/zh.js?v=2"></script>
+  <script src="/static/layout.js?v=13"></script>
+  <script src="/static/db.js?v=1"></script>
+</body>
+
+</html>

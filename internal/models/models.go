@@ -2,42 +2,42 @@ package models
 
 import "time"
 
-// Mailbox 邮箱管理
+// Mailbox Mailbox management
 //
-// Status 流转: unverified(待验证) / verifying(验证中) / verify_failed(验证失败) / verified(已验证)
+// Status flow: unverified / verifying / verify_failed / verified
 type Mailbox struct {
-	ID            uint      `gorm:"primaryKey" json:"id"`
-	Email         string    `gorm:"size:255;not null;uniqueIndex" json:"email"`
-	Password      string    `gorm:"size:255" json:"password"`
-	Provider      string    `gorm:"size:64" json:"provider"` // gmail / outlook / 临时邮箱...
-	ClientID      string    `gorm:"size:255" json:"client_id"`
-	RefreshToken  string    `gorm:"type:text" json:"refresh_token"`
-	PurchaseID    int       `gorm:"default:0" json:"purchase_id"` // vary.email 取件权 ID（provider=varymail 时有效）
-	Status        string    `gorm:"size:32;default:unverified" json:"status"`
-	Note          string    `gorm:"type:text" json:"note"`
-	RegisterCount int       `gorm:"-" json:"register_count"`
-	RegisterLimit int       `gorm:"-" json:"register_limit"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID              uint      `gorm:"primaryKey" json:"id"`
+	Email           string    `gorm:"size:255;not null;uniqueIndex" json:"email"`
+	Password        string    `gorm:"size:255" json:"password"`
+	ClientID        string    `gorm:"size:255" json:"client_id"`
+	RefreshToken    string    `gorm:"type:text" json:"refresh_token"`
+	Provider        string    `gorm:"size:64" json:"provider"` // gmail / outlook / temp mail...
+	PurchaseID      int       `gorm:"default:0" json:"purchase_id"` // vary.email purchase ID (valid when provider=varymail)
+	Status          string    `gorm:"size:32;default:unverified" json:"status"`
+	Note            string    `gorm:"type:text" json:"note"`
+	RegisterCount   int       `gorm:"-" json:"register_count"`
+	RegisterLimit   int       `gorm:"-" json:"register_limit"`
+	CreatedAt       LocalTime `gorm:"autoCreateTime;type:text" json:"created_at"`
+	UpdatedAt       LocalTime `gorm:"autoUpdateTime;type:text" json:"updated_at"`
 }
 
-// Setting 系统设置 (key-value)
+// Setting System settings (key-value)
 type Setting struct {
 	Key       string    `gorm:"primaryKey;size:128" json:"key"`
 	Value     string    `gorm:"type:text" json:"value"`
-	UpdatedAt time.Time `json:"updated_at"`
+	UpdatedAt LocalTime `gorm:"autoUpdateTime;type:text" json:"updated_at"`
 }
 
-// Admin 后台管理员账户。
+// Admin Admin user account.
 //
-// Token 存当前唯一有效的 JWT：签发即写库、换新即作废旧的（旧 token 立即失效）。
-// TokenIssuedAt 记录本 token 的签发时间，用于“超过 2 小时自动续期”。
+// Token stores current unique valid JWT.
+// TokenIssuedAt stores token issue time, used for "auto renewal after 2 hours".
 type Admin struct {
 	ID            uint      `gorm:"primaryKey" json:"id"`
 	Username      string    `gorm:"size:64;uniqueIndex;not null" json:"username"`
 	PasswordHash  string    `gorm:"size:255;not null" json:"-"`
 	Token         string    `gorm:"type:text" json:"-"`
 	TokenIssuedAt time.Time `json:"-"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	CreatedAt     LocalTime `gorm:"autoCreateTime;type:text" json:"created_at"`
+	UpdatedAt     LocalTime `gorm:"autoUpdateTime;type:text" json:"updated_at"`
 }

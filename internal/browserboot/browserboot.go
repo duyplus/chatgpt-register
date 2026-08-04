@@ -1,5 +1,5 @@
-// Package browserboot 负责在程序启动时确保 rod 所需的 Chromium 浏览器已就绪，
-// 未就绪则自动下载，并对外暴露下载进度供仪表盘展示。
+// Package browserboot ensures Chromium required by rod is ready on startup,
+// automatically downloads it if not ready, and exposes download progress for the dashboard.
 package browserboot
 
 import (
@@ -11,17 +11,17 @@ import (
 	"github.com/go-rod/rod/lib/launcher"
 )
 
-// Status 浏览器就绪 / 下载状态快照。
+// Status browser readiness / download status snapshot.
 type Status struct {
-	Ready       bool   `json:"ready"`       // 浏览器是否已就绪（可以生产）
-	Downloading bool   `json:"downloading"` // 是否正在下载
-	Percent     int    `json:"percent"`     // 当前阶段进度 0-100
+	Ready       bool   `json:"ready"`       // Whether browser is ready for production
+	Downloading bool   `json:"downloading"` // Whether downloading is in progress
+	Percent     int    `json:"percent"`     // Current phase percentage 0-100
 	Phase       string `json:"phase"`       // checking / downloading / unzip / ready / error
-	Message     string `json:"message"`     // 面向用户的提示
-	Error       string `json:"error"`       // 失败原因
+	Message     string `json:"message"`     // User-facing message
+	Error       string `json:"error"`       // Failure reason
 }
 
-// Manager 管理浏览器下载状态，实现 rod launcher 的 utils.Logger 接口以捕获下载进度。
+// Manager manages browser download status and implements launcher.Browser.Logger to capture progress.
 type Manager struct {
 	mu   sync.RWMutex
 	st   Status
@@ -29,17 +29,17 @@ type Manager struct {
 }
 
 func New() *Manager {
-	return &Manager{st: Status{Phase: "checking", Message: "正在检查浏览器..."}}
+	return &Manager{st: Status{Phase: "checking", Message: "Checking browser..."}}
 }
 
-// Snapshot 返回状态副本。
+// Snapshot returns a copy of the status.
 func (m *Manager) Snapshot() Status {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.st
 }
 
-// Ready 浏览器是否已就绪。
+// Ready returns whether the browser is ready.
 func (m *Manager) Ready() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -52,8 +52,7 @@ func (m *Manager) set(f func(*Status)) {
 	m.mu.Unlock()
 }
 
-// Println 实现 launcher.Browser.Logger（utils.Logger）接口，解析 fetchup 的进度事件。
-// 事件形如：("Download:", url) / ("Progress:", "50%") / ("Unzip:", dir) / ("Downloaded:", to)。
+// Println implements launcher.Browser.Logger (utils.Logger) interface to parse fetchup progress events.
 func (m *Manager) Println(vs ...interface{}) {
 	if len(vs) == 0 {
 		return
@@ -71,9 +70,9 @@ func (m *Manager) Println(vs ...interface{}) {
 					}
 					s.Percent = n
 					if s.Phase == "unzip" {
-						s.Message = fmt.Sprintf("正在解压浏览器 %d%%", n)
+						s.Message = fmt.Sprintf("Unzipping browser %d%%", n)
 					} else {
-						s.Message = fmt.Sprintf("正在下载浏览器 %d%%", n)
+						s.Message = fmt.Sprintf("Downloading browser %d%%", n)
 					}
 				})
 			}
@@ -83,24 +82,24 @@ func (m *Manager) Println(vs ...interface{}) {
 			s.Downloading = true
 			s.Phase = "downloading"
 			s.Percent = 0
-			s.Message = "开始下载浏览器..."
+			s.Message = "Starting browser download..."
 		})
 	case strings.HasPrefix(tag, "Unzip:"):
 		m.set(func(s *Status) {
 			s.Downloading = true
 			s.Phase = "unzip"
 			s.Percent = 0
-			s.Message = "正在解压浏览器..."
+			s.Message = "Unzipping browser..."
 		})
 	case strings.HasPrefix(tag, "Downloaded:"):
 		m.set(func(s *Status) {
 			s.Percent = 100
-			s.Message = "下载完成，正在校验..."
+			s.Message = "Download complete, verifying..."
 		})
 	}
 }
 
-// EnsureAsync 后台确保浏览器就绪（幂等，仅执行一次）。
+// EnsureAsync ensures browser readiness in background (idempotent, executes only once).
 func (m *Manager) EnsureAsync() {
 	m.once.Do(func() { go m.ensure() })
 }
@@ -109,10 +108,10 @@ func (m *Manager) ensure() {
 	b := launcher.NewBrowser()
 	b.Logger = m
 
-	// 已存在且可用 → 直接就绪，不下载。
+	// Exists and valid -> ready directly, no download needed.
 	if err := b.Validate(); err == nil {
 		m.set(func(s *Status) {
-			*s = Status{Ready: true, Percent: 100, Phase: "ready", Message: "浏览器已就绪"}
+			*s = Status{Ready: true, Percent: 100, Phase: "ready", Message: "Browser ready"}
 		})
 		return
 	}
@@ -121,7 +120,7 @@ func (m *Manager) ensure() {
 		s.Ready = false
 		s.Downloading = true
 		s.Phase = "downloading"
-		s.Message = "缺少浏览器，正在下载..."
+		s.Message = "Browser missing, downloading..."
 	})
 
 	if _, err := b.Get(); err != nil {
@@ -130,12 +129,12 @@ func (m *Manager) ensure() {
 			s.Downloading = false
 			s.Phase = "error"
 			s.Error = err.Error()
-			s.Message = "浏览器下载失败，请检查网络后重启程序"
+			s.Message = "Browser download failed, please check network and restart"
 		})
 		return
 	}
 
 	m.set(func(s *Status) {
-		*s = Status{Ready: true, Percent: 100, Phase: "ready", Message: "浏览器已就绪"}
+		*s = Status{Ready: true, Percent: 100, Phase: "ready", Message: "Browser ready"}
 	})
 }

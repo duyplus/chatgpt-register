@@ -1,7 +1,6 @@
 package db
 
 import (
-	"chatgpt-register/internal/emailalias"
 	"chatgpt-register/internal/models"
 
 	"github.com/glebarez/sqlite"
@@ -19,19 +18,33 @@ func Init(path string) (*gorm.DB, error) {
 	normalizeLegacyStatuses(db)
 	reclaimOrphanRegistering(db)
 	backfillRegistrationMailboxIDs(db)
+	dropMailboxTypeColumn(db)
+	dropMailboxTwoFactorSecretColumn(db)
 	return db, nil
 }
 
-// reclaimOrphanRegistering 启动时把残留的 registering 记录标为 register_failed。
-// 生产任务状态只在内存里，程序重启后这些"注册中"记录不会再有人推进，
-// 置为失败后可在下次生产时被重新领取（母号+裂变补齐规则）。
-func reclaimOrphanRegistering(db *gorm.DB) {
-	db.Model(&models.Registration{}).Where("status = ?", "registering").
-		Updates(map[string]any{"status": "register_failed", "note": "程序重启中断，可重新生产"})
+func dropMailboxTypeColumn(db *gorm.DB) {
+	if db.Migrator().HasColumn(&models.Mailbox{}, "type") {
+		_ = db.Migrator().DropColumn(&models.Mailbox{}, "type")
+	}
 }
 
-// normalizeLegacyStatuses 把旧的 AdSkull 验证态注册记录迁移到新的生产态。
-// Mailbox 的 unverified/verified 表示邮箱凭据是否校验通过，语义不变，保持原样。
+func dropMailboxTwoFactorSecretColumn(db *gorm.DB) {
+	if db.Migrator().HasColumn(&models.Mailbox{}, "two_factor_secret") {
+		_ = db.Migrator().DropColumn(&models.Mailbox{}, "two_factor_secret")
+	}
+}
+
+// reclaimOrphanRegistering marks leftover registering records as register_failed on startup.
+// Production task status is in-memory; after restart, these "registering" records won't be pushed further.
+// Setting them to failed allows them to be reclaimed during the next production run.
+func reclaimOrphanRegistering(db *gorm.DB) {
+	db.Model(&models.Registration{}).Where("status = ?", "registering").
+		Updates(map[string]any{"status": "register_failed", "note": "Interrupted by program restart, can be reproduced"})
+}
+
+// normalizeLegacyStatuses migrates legacy verification status registration records to new production status.
+// Mailbox's unverified/verified indicates whether mailbox credentials are valid, semantics unchanged.
 func normalizeLegacyStatuses(db *gorm.DB) {
 	regStatusMap := map[string]string{
 		"unverified":    "pending",
@@ -50,9 +63,8 @@ func backfillRegistrationMailboxIDs(db *gorm.DB) {
 		return
 	}
 	for _, reg := range regs {
-		baseEmail := emailalias.Base(reg.Email)
 		var mb models.Mailbox
-		if err := db.Where("email = ?", baseEmail).First(&mb).Error; err == nil {
+		if err := db.Where("email = ?", reg.Email).First(&mb).Error; err == nil {
 			db.Model(&models.Registration{}).Where("id = ?", reg.ID).Update("mailbox_id", mb.ID)
 		}
 	}

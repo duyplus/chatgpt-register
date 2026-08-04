@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"chatgpt-register/internal/models"
 
@@ -9,7 +10,16 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// 内部保留 key（如 JWT 密钥），不允许通过设置接口读取或修改
+// setting Reads a single setting value (returns empty string if not exists).
+func (h *Handler) setting(key string) string {
+	var items []models.Setting
+	if err := h.DB.Where("key = ?", key).Limit(1).Find(&items).Error; err != nil || len(items) == 0 {
+		return ""
+	}
+	return strings.TrimSpace(items[0].Value)
+}
+
+// Internal reserved keys (e.g. JWT secret), not allowed to read or modify via settings API.
 var reservedSettingKeys = map[string]bool{
 	"jwt_secret": true,
 }

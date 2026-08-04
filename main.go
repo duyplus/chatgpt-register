@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"embed"
 	"io/fs"
 	"log"
@@ -14,7 +13,6 @@ import (
 	"chatgpt-register/internal/browserboot"
 	"chatgpt-register/internal/db"
 	"chatgpt-register/internal/handlers"
-	"chatgpt-register/internal/replenish"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,10 +26,10 @@ func main() {
 		log.Fatalf("init db: %v", err)
 	}
 
-	// 重启后仍停留在"注册中"的记录已无存活任务，统一判定为失败。
+	// Records left in "registering" status after restart have no surviving task, marked as failed.
 	if err := database.Exec(
 		"UPDATE registrations SET status = 'register_failed', log = log || ? WHERE status = 'registering'",
-		"\n"+time.Now().Format("2006-01-02 15:04:05")+" ✗ 程序重启，任务中断，判定为失败",
+		"\n["+time.Now().Format("02/01/2006 15:04:05")+"] ✗ Program restarted, task interrupted, marked as failed",
 	).Error; err != nil {
 		log.Printf("reset registering on boot: %v", err)
 	}
@@ -41,7 +39,7 @@ func main() {
 		log.Fatalf("init auth: %v", err)
 	}
 
-	// 启动时后台确保 rod 所需浏览器已就绪，未就绪则自动下载。
+	// Ensure the browser required by rod is ready asynchronously on startup, auto download if not ready.
 	browser := browserboot.New()
 	browser.EnsureAsync()
 
@@ -49,10 +47,6 @@ func main() {
 	r := gin.Default()
 
 	h := handlers.New(database, authSvc, browser)
-
-	// 自动补号：后台定时把已注册账号推送到 image2api 账号池（受系统设置开关控制）。
-	// 没号时可自动触发生产（复用同一个 Producer 与浏览器）。
-	replenish.New(database, h.Producer, browser).Start(context.Background())
 
 	r.POST("/api/login", h.Login)
 
@@ -68,6 +62,7 @@ func main() {
 		api.DELETE("/registrations/:id", h.Delete)
 		api.GET("/registrations/:id/logs", h.RegistrationLog)
 		api.GET("/registrations/:id/shot", h.RegistrationShot)
+		api.GET("/registrations/:id/2fa", h.RegistrationTwoFactorCode)
 		api.PUT("/registrations/:id/shipped", h.SetShipped)
 		api.POST("/download", h.Download)
 
@@ -87,6 +82,8 @@ func main() {
 		api.DELETE("/mailboxes/:id", h.MailboxDelete)
 		api.GET("/mailboxes/:id/messages", h.MailboxMessages)
 		api.GET("/mailboxes/:id/message", h.MailboxMessage)
+		api.GET("/mailboxes/:id/2fa", h.MailboxTwoFactorCode)
+		api.GET("/2fa/code", h.MailboxTwoFactorCode)
 
 		api.GET("/settings", h.SettingsGet)
 		api.PUT("/settings", h.SettingsSave)
@@ -94,6 +91,16 @@ func main() {
 		api.GET("/varymail/services", h.VarymailServices)
 
 		api.POST("/proxy/test", h.ProxyTest)
+
+		// DB Manager API routes
+		api.GET("/db/tables", h.GetDBTables)
+		api.GET("/db/rows", h.GetTableRows)
+		api.POST("/db/rows", h.CreateDBRecord)
+		api.PUT("/db/rows", h.UpdateDBRecord)
+		api.DELETE("/db/rows", h.DeleteDBRecord)
+		api.POST("/db/truncate", h.TruncateDBTable)
+		api.GET("/db/backup", h.BackupDB)
+		api.POST("/db/restore", h.RestoreDB)
 	}
 
 	sub, err := fs.Sub(staticFS, "static")
@@ -102,7 +109,7 @@ func main() {
 	}
 	httpFS := http.FS(sub)
 	r.StaticFS("/static", httpFS)
-	for _, p := range []string{"login", "dashboard", "mailboxes", "accounts", "settings"} {
+	for _, p := range []string{"login", "dashboard", "mailboxes", "accounts", "settings", "db"} {
 		p := p
 		r.GET("/"+p, func(c *gin.Context) { c.FileFromFS(p+".html", httpFS) })
 	}

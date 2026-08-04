@@ -1,13 +1,13 @@
-// Package codexreg 用浏览器自动化注册 ChatGPT 账号，直接导出 accessToken，
-// 产出 auth.json（accessToken 结构）。由 producer 批量调用。
+// Package codexreg Automates ChatGPT account registration using browser, exports accessToken directly,
+// and outputs auth.json (accessToken structure). Called in batch by producer.
 //
-// 迁移自独立的 got 命令行工具：
-//   - browser.go  : 打开 chatgpt.com 完成注册（邮箱→验证码→资料），提取 accessToken
-//   - geoip.go    : 代理解析 + 按出口 IP 对齐时区/坐标/语言 + 资源屏蔽
-//   - codex.go    : 用 accessToken 组装 auth.json
+// Migrated from standalone got CLI tool:
+//   - browser.go  : Opens chatgpt.com to complete registration (email -> code -> profile), extracts accessToken
+//   - geoip.go    : Proxy parsing + timezone/coordinates/locale alignment by exit IP + resource blocking
+//   - codex.go    : Assembles auth.json using accessToken
 //
-// 与命令行版的区别：验证码不再手动 fmt.Scan，而是由调用方通过 FetchCode 回调
-// 从邮箱自动读取。
+// Difference from CLI version: Verification code is no longer manually scanned via fmt.Scan,
+// but automatically read from email via FetchCode callback provided by caller.
 package codexreg
 
 import (
@@ -17,32 +17,36 @@ import (
 
 const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
 
-// Input 单个账号的生产参数。
+// Input Production parameters for a single account.
 type Input struct {
-	Email    string
-	Password string // 注册流程要求创建密码时使用（为空则自动生成）
-	FullName string
-	Age      string
-	Proxy    string // 空=直连
-	Headless bool
+	Email           string
+	Password        string // Password used when registration requires password creation (auto-generated if empty)
+	TwoFactorSecret string // Existing 2FA secret if already set
+	FullName        string
+	Age         string
+	Proxy       string // Empty = direct connection
+	Headless    bool
+	IsLoginOnly bool   // True if logging into existing account for password & 2FA setup
 
-	// FetchCode 拉取 ChatGPT 发到邮箱的验证码。由 producer 用 mailfetch 实现。
+	// FetchCode Fetches ChatGPT verification code sent to email. Implemented by producer via mailfetch.
 	FetchCode func(ctx context.Context) (string, error)
 
-	// Log 输出进度（可为 nil）。
+	// Log Progress logging output (can be nil).
 	Log func(format string, a ...any)
 
-	// SaveShot 保存注册失败时的页面截图(PNG)，用于事后排查（可为 nil）。
+	// SaveShot Saves failure screenshot (PNG) for troubleshooting (can be nil).
 	SaveShot func(png []byte)
 }
 
-// Result 生产结果。
+// Result Production output result.
 type Result struct {
-	AccessToken string         `json:"-"`
-	AuthJSON    map[string]any `json:"auth_json"`  // 完整 auth.json
-	AccountID   string         `json:"account_id"` // 不再解码 JWT，保留字段兼容调用方
-	UserID      string         `json:"user_id"`
-	PlanType    string         `json:"plan_type"`
+	AccessToken     string         `json:"-"`
+	AuthJSON        map[string]any `json:"auth_json"`  // Complete auth.json
+	AccountID       string         `json:"account_id"` // Kept for caller compatibility
+	UserID          string         `json:"user_id"`
+	PlanType        string         `json:"plan_type"`
+	TwoFactorSecret string         `json:"two_factor_secret"`
+	Password        string         `json:"password,omitempty"`
 }
 
 func (in Input) logf(format string, a ...any) {
@@ -51,10 +55,10 @@ func (in Input) logf(format string, a ...any) {
 	}
 }
 
-// Register 完整生产一个账号：浏览器注册 ChatGPT → 取 accessToken → 组装 auth.json。
+// Register Complete production of an account: Browser ChatGPT registration -> Get accessToken -> Assemble auth.json.
 func Register(ctx context.Context, in Input) (*Result, error) {
 	if in.FetchCode == nil {
-		return nil, fmt.Errorf("缺少 FetchCode 回调，无法自动读取验证码")
+		return nil, fmt.Errorf("missing FetchCode callback, cannot read verification code automatically")
 	}
 	if in.FullName == "" {
 		in.FullName = genName()
@@ -66,10 +70,18 @@ func Register(ctx context.Context, in Input) (*Result, error) {
 		in.Password = GenPassword(16)
 	}
 
-	accessToken, err := registerBrowser(ctx, in)
+	accessToken, tfSecret, err := registerBrowser(ctx, in)
 	if err != nil {
-		return nil, fmt.Errorf("ChatGPT 注册失败: %w", err)
+		if in.IsLoginOnly {
+			return nil, fmt.Errorf("ChatGPT login & 2FA setup failed: %w", err)
+		}
+		return nil, fmt.Errorf("ChatGPT registration failed: %w", err)
 	}
 
-	return &Result{AccessToken: accessToken, AuthJSON: buildAuth(in, accessToken)}, nil
+	return &Result{
+		AccessToken:     accessToken,
+		AuthJSON:        buildAuth(in, accessToken),
+		TwoFactorSecret: tfSecret,
+		Password:        in.Password,
+	}, nil
 }
